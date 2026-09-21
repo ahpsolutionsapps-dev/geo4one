@@ -1,0 +1,204 @@
+// Esquema reducido para exportar módulos auth, roles y usuarios.
+// Copia de referencia del monolito: schema.completo.prisma
+// Migración inicial: migrations-reducido/
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Modulo {
+  idModulo     Int         @id @default(autoincrement()) @map("IdModulo")
+  nombreModulo String      @map("NombreModulo")
+  icono        String?     @map("Icono")
+  ruta         String?     @map("Ruta")
+  idPadre      Int?        @map("IdPadre")
+  orderIndex   Int?        @default(0) @map("OrderIndex")
+  codigo       String?     @map("Codigo")
+  oculto       Boolean     @default(false) @map("Oculto")
+  padre        Modulo?     @relation("ModuloPadre", fields: [idPadre], references: [idModulo], onUpdate: NoAction)
+  hijos        Modulo[]    @relation("ModuloPadre")
+  rolModulos   RolModulo[]
+
+  @@map("Modulos")
+}
+
+model Negocio {
+  idNegocio                                     Int          @id @default(autoincrement()) @map("IdNegocio")
+  nombre                                        String       @map("Nombre") @db.VarChar(150)
+  rnc                                           String?      @map("RNC") @db.VarChar(20)
+  direccion                                     String?      @map("Direccion")
+  telefono                                      String?      @map("Telefono") @db.VarChar(30)
+  email                                         String?      @map("Email") @db.VarChar(150)
+  fechaCreacion                                 DateTime     @default(now()) @map("FechaCreacion") @db.Timestamp(6)
+  fechaModificacion                             DateTime?    @map("FechaModificacion") @db.Timestamp(6)
+  fechaAnulacion                                DateTime?    @map("FechaAnulacion") @db.Timestamp(6)
+  anulado                                       Boolean      @default(false) @map("Anulado")
+  comentarioAnulado                             String?      @map("ComentarioAnulado")
+  idUsuarioRegistra                             Int          @map("IdUsuarioRegistra")
+  idUsuarioModifica                             Int?         @map("IdUsuarioModifica")
+  idUsuarioAnula                                Int?         @map("IdUsuarioAnula")
+  Usuarios_Negocios_IdUsuarioAnulaToUsuarios    Usuario?     @relation("Negocios_IdUsuarioAnulaToUsuarios", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Negocios_Anula")
+  Usuarios_Negocios_IdUsuarioModificaToUsuarios Usuario?     @relation("Negocios_IdUsuarioModificaToUsuarios", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Negocios_Modifica")
+  Usuarios_Negocios_IdUsuarioRegistraToUsuarios Usuario      @relation("Negocios_IdUsuarioRegistraToUsuarios", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Negocios_Registra")
+  roles                                         Rol[]
+  sucursales                                    Sucursales[]
+  usuarios                                      Usuario[]
+
+  @@map("Negocios")
+}
+
+model Rol {
+  idRol             Int         @id @default(autoincrement()) @map("IdRol")
+  idNegocio         Int         @map("IdNegocio")
+  rol               String      @map("Rol") @db.VarChar(100)
+  descripcion       String      @map("Descripcion")
+  idUsuarioRegistra Int?        @map("IdUsuarioRegistra")
+  fechaCreacion     DateTime    @default(now()) @map("FechaCreacion") @db.Timestamp(6)
+  idUsuarioModifica Int?        @map("IdUsuarioModifica")
+  fechaModificacion DateTime?   @map("FechaModificacion") @db.Timestamp(6)
+  anulado           Boolean     @default(false) @map("Anulado")
+  idUsuarioAnula    Int?        @map("IdUsuarioAnula")
+  fechaAnulado      DateTime?   @map("FechaAnulado") @db.Timestamp(6)
+  comentario        String?     @map("Comentario")
+  rolModulos        RolModulo[]
+  usuarioAnula      Usuario?    @relation("RolAnula", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Roles_Anula")
+  usuarioModifica   Usuario?    @relation("RolModifica", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Roles_Modifica")
+  negocio           Negocio     @relation(fields: [idNegocio], references: [idNegocio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Roles_Negocios")
+  usuarioRegistra   Usuario?    @relation("RolRegistra", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Roles_Registra")
+  usuarios          Usuario[]   @relation("UsuarioRol")
+
+  @@map("Roles")
+}
+
+model Usuario {
+  idUsuario                                                       Int               @id @default(autoincrement()) @map("IdUsuario")
+  idNegocio                                                       Int               @map("IdNegocio")
+  idRol                                                           Int?              @map("IdRol")
+  username                                                        String            @unique @map("Username") @db.VarChar(100)
+  email                                                           String            @map("Email") @db.VarChar(150)
+  passwordHash                                                    String            @map("Userpassword")
+  nombre                                                          String            @map("Nombre") @db.VarChar(100)
+  apellido                                                        String?           @map("Apellido") @db.VarChar(100)
+  telefono                                                        String?           @map("Telefono") @db.VarChar(30)
+  palabraSecreta                                                  String?           @map("PalabraSecreta") @db.VarChar(255)
+  habilitado                                                      Boolean           @default(true) @map("Habilitado")
+  verificado                                                      Boolean           @default(false) @map("Verificado")
+  estatus                                                         Int               @default(1) @map("Estatus") @db.SmallInt
+  imagen                                                          String?           @map("Imagen")
+  primaryColor                                                    String?           @map("PrimaryColor") @db.VarChar(30)
+  idioma                                                          String            @default("es") @map("Idioma") @db.VarChar(10)
+  tema                                                            String            @default("sistema") @map("Tema") @db.VarChar(20)
+  intentosFallidos                                                Int               @default(0) @map("IntentosFallidos") @db.SmallInt
+  ultimoAcceso                                                    DateTime?         @map("UltimoAcceso") @db.Timestamp(6)
+  bloqueadoHasta                                                  DateTime?         @map("BloqueadoHasta") @db.Timestamp(6)
+  idUsuarioRegistra                                               Int?              @map("IdUsuarioRegistra")
+  fechaCreacion                                                   DateTime          @default(now()) @map("FechaCreacion") @db.Timestamp(6)
+  idUsuarioModifica                                               Int?              @map("IdUsuarioModifica")
+  fechaModificacion                                               DateTime?         @map("FechaModificacion") @db.Timestamp(6)
+  anulado                                                         Boolean           @default(false) @map("Anulado")
+  idUsuarioAnula                                                  Int?              @map("IdUsuarioAnula")
+  fechaAnulado                                                    DateTime?         @map("FechaAnulado") @db.Timestamp(6)
+  comentario                                                      String?           @map("Comentario")
+  darkColorScheme                                                 String?           @default("cinder") @map("DarkColorScheme") @db.VarChar(20)
+  Negocios_Negocios_IdUsuarioAnulaToUsuarios                      Negocio[]         @relation("Negocios_IdUsuarioAnulaToUsuarios")
+  Negocios_Negocios_IdUsuarioModificaToUsuarios                   Negocio[]         @relation("Negocios_IdUsuarioModificaToUsuarios")
+  Negocios_Negocios_IdUsuarioRegistraToUsuarios                   Negocio[]         @relation("Negocios_IdUsuarioRegistraToUsuarios")
+  qrLoginSessions                                                 QrLoginSession[]
+  rolesAnula                                                      Rol[]             @relation("RolAnula")
+  rolesModifica                                                   Rol[]             @relation("RolModifica")
+  rolesRegistra                                                   Rol[]             @relation("RolRegistra")
+  Sucursales_Sucursales_IdUsuarioAnulaToUsuarios                  Sucursales[]      @relation("Sucursales_IdUsuarioAnulaToUsuarios")
+  Sucursales_Sucursales_IdUsuarioModificaToUsuarios               Sucursales[]      @relation("Sucursales_IdUsuarioModificaToUsuarios")
+  Sucursales_Sucursales_IdUsuarioRegistraToUsuarios               Sucursales[]      @relation("Sucursales_IdUsuarioRegistraToUsuarios")
+  usuarioAnula                                                    Usuario?          @relation("UsuarioAnula", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Anula")
+  anulados                                                        Usuario[]         @relation("UsuarioAnula")
+  usuarioModifica                                                 Usuario?          @relation("UsuarioModifica", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Modifica")
+  modificados                                                     Usuario[]         @relation("UsuarioModifica")
+  negocio                                                         Negocio           @relation(fields: [idNegocio], references: [idNegocio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Negocios")
+  usuarioRegistra                                                 Usuario?          @relation("UsuarioRegistra", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Registra")
+  registrados                                                     Usuario[]         @relation("UsuarioRegistra")
+  rol                                                             Rol?              @relation("UsuarioRol", fields: [idRol], references: [idRol], map: "FK_Usuarios_Roles")
+  UsuariosSucursales_UsuariosSucursales_IdUsuarioAnulaToUsuarios UsuarioSucursal[] @relation("UsuariosSucursales_IdUsuarioAnulaToUsuarios")
+  UsuariosSucursales_UsuariosSucursales_IdUsuarioModificaToUsuarios UsuarioSucursal[] @relation("UsuariosSucursales_IdUsuarioModificaToUsuarios")
+  UsuariosSucursales_UsuariosSucursales_IdUsuarioRegistraToUsuarios UsuarioSucursal[] @relation("UsuariosSucursales_IdUsuarioRegistraToUsuarios")
+  usuarioSucursales                                               UsuarioSucursal[]
+
+  @@map("Usuarios")
+}
+
+model RolModulo {
+  idRolModulo Int    @id @default(autoincrement()) @map("IdRolModulo")
+  idRol       Int    @map("IdRol")
+  idModulo    Int    @map("IdModulo")
+  modulo      Modulo @relation(fields: [idModulo], references: [idModulo], onDelete: Cascade, map: "FK_RolModulos_Modulos")
+  rol         Rol    @relation(fields: [idRol], references: [idRol], onDelete: Cascade, map: "FK_RolModulos_Roles")
+
+  @@map("RolModulos")
+}
+
+model QrLoginSession {
+  idQrLoginSession Int       @id @default(autoincrement()) @map("IdQrLoginSession")
+  code             String    @map("Code")
+  status           String    @default("pending") @map("Status")
+  idUsuario        Int?      @map("IdUsuario")
+  token            String?   @map("Token")
+  deviceName       String?   @map("DeviceName")
+  expiraEn         DateTime  @map("ExpiraEn") @db.Timestamp(6)
+  aprobadoEn       DateTime? @map("AprobadoEn") @db.Timestamp(6)
+  consumidoEn      DateTime? @map("ConsumidoEn") @db.Timestamp(6)
+  creadoEn         DateTime  @default(now()) @map("CreadoEn") @db.Timestamp(6)
+  usuario          Usuario?  @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("QrLoginSessions")
+}
+
+model Sucursales {
+  IdSucursal                                      Int               @id @default(autoincrement())
+  IdNegocio                                       Int
+  Nombre                                          String            @db.VarChar(150)
+  Direccion                                       String?
+  Telefono                                        String?           @db.VarChar(30)
+  FechaCreacion                                   DateTime          @default(now()) @db.Timestamp(6)
+  FechaModificacion                               DateTime?         @db.Timestamp(6)
+  FechaAnulacion                                  DateTime?         @db.Timestamp(6)
+  Anulado                                         Boolean           @default(false)
+  ComentarioAnulado                               String?
+  IdUsuarioRegistra                               Int
+  IdUsuarioModifica                               Int?
+  IdUsuarioAnula                                  Int?
+  Usuarios_Sucursales_IdUsuarioAnulaToUsuarios    Usuario?          @relation("Sucursales_IdUsuarioAnulaToUsuarios", fields: [IdUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Sucursales_Anula")
+  Usuarios_Sucursales_IdUsuarioModificaToUsuarios Usuario?          @relation("Sucursales_IdUsuarioModificaToUsuarios", fields: [IdUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Sucursales_Modifica")
+  negocio                                         Negocio           @relation(fields: [IdNegocio], references: [idNegocio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Sucursales_Negocios")
+  Usuarios_Sucursales_IdUsuarioRegistraToUsuarios Usuario           @relation("Sucursales_IdUsuarioRegistraToUsuarios", fields: [IdUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Sucursales_Registra")
+  usuarioSucursales                               UsuarioSucursal[]
+
+  @@map("Sucursales")
+}
+
+model UsuarioSucursal {
+  idUsuarioSucursal                                       Int        @id @default(autoincrement()) @map("IdUsuarioSucursal")
+  idUsuario                                               Int        @map("IdUsuario")
+  idSucursal                                              Int        @map("IdSucursal")
+  esPrincipal                                             Boolean    @default(false) @map("EsPrincipal")
+  activo                                                  Boolean    @default(true) @map("Activo")
+  fechaCreacion                                           DateTime   @default(now()) @map("FechaCreacion") @db.Timestamp(6)
+  fechaModificacion                                       DateTime?  @map("FechaModificacion") @db.Timestamp(6)
+  fechaAnulacion                                          DateTime?  @map("FechaAnulacion") @db.Timestamp(6)
+  anulado                                                 Boolean    @default(false) @map("Anulado")
+  comentarioAnulado                                       String?    @map("ComentarioAnulado")
+  idUsuarioRegistra                                       Int        @map("IdUsuarioRegistra")
+  idUsuarioModifica                                       Int?       @map("IdUsuarioModifica")
+  idUsuarioAnula                                          Int?       @map("IdUsuarioAnula")
+  Usuarios_UsuariosSucursales_IdUsuarioAnulaToUsuarios    Usuario?   @relation("UsuariosSucursales_IdUsuarioAnulaToUsuarios", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_UsuariosSucursales_Anula")
+  Usuarios_UsuariosSucursales_IdUsuarioModificaToUsuarios Usuario?   @relation("UsuariosSucursales_IdUsuarioModificaToUsuarios", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_UsuariosSucursales_Modifica")
+  Usuarios_UsuariosSucursales_IdUsuarioRegistraToUsuarios Usuario    @relation("UsuariosSucursales_IdUsuarioRegistraToUsuarios", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_UsuariosSucursales_Registra")
+  sucursal                                                Sucursales @relation(fields: [idSucursal], references: [IdSucursal], onDelete: Cascade, onUpdate: NoAction, map: "FK_UsuariosSucursales_Sucursales")
+  usuario                                                 Usuario    @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade, onUpdate: NoAction, map: "FK_UsuariosSucursales_Usuarios")
+
+  @@unique([idUsuario, idSucursal], map: "UQ_UsuarioSucursal")
+  @@map("UsuariosSucursales")
+}

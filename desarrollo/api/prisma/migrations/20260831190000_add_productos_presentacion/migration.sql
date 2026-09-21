@@ -1,0 +1,1 @@
+ALTER TABLE "Productos" ADD COLUMN IF NOT EXISTS "Presentacion" VARCHAR(200);

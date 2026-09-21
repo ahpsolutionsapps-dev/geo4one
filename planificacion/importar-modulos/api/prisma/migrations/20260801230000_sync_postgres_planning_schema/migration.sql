@@ -1,0 +1,2 @@
+-- Esquema ya aplicado desde planificacion/estructura-datos/postgres/.
+-- Esta migración alinea el historial de Prisma con la base de datos existente.

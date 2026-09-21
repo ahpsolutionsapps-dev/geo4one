@@ -1,0 +1,2 @@
+-- Esquema inicial ya aplicado desde planificacion/estructura-datos/postgres/.
+-- Migracion legacy SQLite reemplazada para compatibilidad con shadow database PostgreSQL.

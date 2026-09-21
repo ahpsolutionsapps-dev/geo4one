@@ -1,0 +1,2 @@
+﻿-- Cambios ya aplicados en PostgreSQL (migracion legacy).
+-- Solo alinea el historial de Prisma.
