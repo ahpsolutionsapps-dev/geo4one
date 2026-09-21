@@ -1,7 +1,3 @@
-// Esquema reducido para exportar módulos auth, roles y usuarios.
-// Copia de referencia del monolito: schema.completo.prisma
-// Migración inicial: migrations-reducido/
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -27,25 +23,24 @@ model Modulo {
 }
 
 model Negocio {
-  idNegocio                                     Int          @id @default(autoincrement()) @map("IdNegocio")
-  nombre                                        String       @map("Nombre") @db.VarChar(150)
-  rnc                                           String?      @map("RNC") @db.VarChar(20)
-  direccion                                     String?      @map("Direccion")
-  telefono                                      String?      @map("Telefono") @db.VarChar(30)
-  email                                         String?      @map("Email") @db.VarChar(150)
-  fechaCreacion                                 DateTime     @default(now()) @map("FechaCreacion") @db.Timestamp(6)
-  fechaModificacion                             DateTime?    @map("FechaModificacion") @db.Timestamp(6)
-  fechaAnulacion                                DateTime?    @map("FechaAnulacion") @db.Timestamp(6)
-  anulado                                       Boolean      @default(false) @map("Anulado")
-  comentarioAnulado                             String?      @map("ComentarioAnulado")
-  idUsuarioRegistra                             Int          @map("IdUsuarioRegistra")
-  idUsuarioModifica                             Int?         @map("IdUsuarioModifica")
-  idUsuarioAnula                                Int?         @map("IdUsuarioAnula")
-  Usuarios_Negocios_IdUsuarioAnulaToUsuarios    Usuario?     @relation("Negocios_IdUsuarioAnulaToUsuarios", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Negocios_Anula")
-  Usuarios_Negocios_IdUsuarioModificaToUsuarios Usuario?     @relation("Negocios_IdUsuarioModificaToUsuarios", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Negocios_Modifica")
-  Usuarios_Negocios_IdUsuarioRegistraToUsuarios Usuario      @relation("Negocios_IdUsuarioRegistraToUsuarios", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Negocios_Registra")
+  idNegocio                                     Int       @id @default(autoincrement()) @map("IdNegocio")
+  nombre                                        String    @map("Nombre") @db.VarChar(150)
+  rnc                                           String?   @map("RNC") @db.VarChar(20)
+  direccion                                     String?   @map("Direccion")
+  telefono                                      String?   @map("Telefono") @db.VarChar(30)
+  email                                         String?   @map("Email") @db.VarChar(150)
+  fechaCreacion                                 DateTime  @default(now()) @map("FechaCreacion")
+  fechaModificacion                             DateTime? @map("FechaModificacion")
+  fechaAnulacion                                DateTime? @map("FechaAnulacion")
+  anulado                                       Boolean   @default(false) @map("Anulado")
+  comentarioAnulado                             String?   @map("ComentarioAnulado")
+  idUsuarioRegistra                             Int       @map("IdUsuarioRegistra")
+  idUsuarioModifica                             Int?      @map("IdUsuarioModifica")
+  idUsuarioAnula                                Int?      @map("IdUsuarioAnula")
+  Usuarios_Negocios_IdUsuarioAnulaToUsuarios    Usuario?  @relation("Negocios_IdUsuarioAnulaToUsuarios", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Negocios_Anula")
+  Usuarios_Negocios_IdUsuarioModificaToUsuarios Usuario?  @relation("Negocios_IdUsuarioModificaToUsuarios", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Negocios_Modifica")
+  Usuarios_Negocios_IdUsuarioRegistraToUsuarios Usuario   @relation("Negocios_IdUsuarioRegistraToUsuarios", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Negocios_Registra")
   roles                                         Rol[]
-  sucursales                                    Sucursales[]
   usuarios                                      Usuario[]
 
   @@map("Negocios")
@@ -53,7 +48,6 @@ model Negocio {
 
 model Rol {
   idRol             Int         @id @default(autoincrement()) @map("IdRol")
-  idNegocio         Int         @map("IdNegocio")
   rol               String      @map("Rol") @db.VarChar(100)
   descripcion       String      @map("Descripcion")
   idUsuarioRegistra Int?        @map("IdUsuarioRegistra")
@@ -64,10 +58,11 @@ model Rol {
   idUsuarioAnula    Int?        @map("IdUsuarioAnula")
   fechaAnulado      DateTime?   @map("FechaAnulado") @db.Timestamp(6)
   comentario        String?     @map("Comentario")
+  idNegocio         Int         @map("IdNegocio")
   rolModulos        RolModulo[]
   usuarioAnula      Usuario?    @relation("RolAnula", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Roles_Anula")
   usuarioModifica   Usuario?    @relation("RolModifica", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Roles_Modifica")
-  negocio           Negocio     @relation(fields: [idNegocio], references: [idNegocio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Roles_Negocios")
+  negocio           Negocio     @relation(fields: [idNegocio], references: [idNegocio], map: "FK_Roles_Negocios")
   usuarioRegistra   Usuario?    @relation("RolRegistra", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Roles_Registra")
   usuarios          Usuario[]   @relation("UsuarioRol")
 
@@ -75,57 +70,50 @@ model Rol {
 }
 
 model Usuario {
-  idUsuario                                                       Int               @id @default(autoincrement()) @map("IdUsuario")
-  idNegocio                                                       Int               @map("IdNegocio")
-  idRol                                                           Int?              @map("IdRol")
-  username                                                        String            @unique @map("Username") @db.VarChar(100)
-  email                                                           String            @map("Email") @db.VarChar(150)
-  passwordHash                                                    String            @map("Userpassword")
-  nombre                                                          String            @map("Nombre") @db.VarChar(100)
-  apellido                                                        String?           @map("Apellido") @db.VarChar(100)
-  telefono                                                        String?           @map("Telefono") @db.VarChar(30)
-  palabraSecreta                                                  String?           @map("PalabraSecreta") @db.VarChar(255)
-  habilitado                                                      Boolean           @default(true) @map("Habilitado")
-  verificado                                                      Boolean           @default(false) @map("Verificado")
-  estatus                                                         Int               @default(1) @map("Estatus") @db.SmallInt
-  imagen                                                          String?           @map("Imagen")
-  primaryColor                                                    String?           @map("PrimaryColor") @db.VarChar(30)
-  idioma                                                          String            @default("es") @map("Idioma") @db.VarChar(10)
-  tema                                                            String            @default("sistema") @map("Tema") @db.VarChar(20)
-  intentosFallidos                                                Int               @default(0) @map("IntentosFallidos") @db.SmallInt
-  ultimoAcceso                                                    DateTime?         @map("UltimoAcceso") @db.Timestamp(6)
-  bloqueadoHasta                                                  DateTime?         @map("BloqueadoHasta") @db.Timestamp(6)
-  idUsuarioRegistra                                               Int?              @map("IdUsuarioRegistra")
-  fechaCreacion                                                   DateTime          @default(now()) @map("FechaCreacion") @db.Timestamp(6)
-  idUsuarioModifica                                               Int?              @map("IdUsuarioModifica")
-  fechaModificacion                                               DateTime?         @map("FechaModificacion") @db.Timestamp(6)
-  anulado                                                         Boolean           @default(false) @map("Anulado")
-  idUsuarioAnula                                                  Int?              @map("IdUsuarioAnula")
-  fechaAnulado                                                    DateTime?         @map("FechaAnulado") @db.Timestamp(6)
-  comentario                                                      String?           @map("Comentario")
-  darkColorScheme                                                 String?           @default("cinder") @map("DarkColorScheme") @db.VarChar(20)
-  Negocios_Negocios_IdUsuarioAnulaToUsuarios                      Negocio[]         @relation("Negocios_IdUsuarioAnulaToUsuarios")
-  Negocios_Negocios_IdUsuarioModificaToUsuarios                   Negocio[]         @relation("Negocios_IdUsuarioModificaToUsuarios")
-  Negocios_Negocios_IdUsuarioRegistraToUsuarios                   Negocio[]         @relation("Negocios_IdUsuarioRegistraToUsuarios")
-  qrLoginSessions                                                 QrLoginSession[]
-  rolesAnula                                                      Rol[]             @relation("RolAnula")
-  rolesModifica                                                   Rol[]             @relation("RolModifica")
-  rolesRegistra                                                   Rol[]             @relation("RolRegistra")
-  Sucursales_Sucursales_IdUsuarioAnulaToUsuarios                  Sucursales[]      @relation("Sucursales_IdUsuarioAnulaToUsuarios")
-  Sucursales_Sucursales_IdUsuarioModificaToUsuarios               Sucursales[]      @relation("Sucursales_IdUsuarioModificaToUsuarios")
-  Sucursales_Sucursales_IdUsuarioRegistraToUsuarios               Sucursales[]      @relation("Sucursales_IdUsuarioRegistraToUsuarios")
-  usuarioAnula                                                    Usuario?          @relation("UsuarioAnula", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Anula")
-  anulados                                                        Usuario[]         @relation("UsuarioAnula")
-  usuarioModifica                                                 Usuario?          @relation("UsuarioModifica", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Modifica")
-  modificados                                                     Usuario[]         @relation("UsuarioModifica")
-  negocio                                                         Negocio           @relation(fields: [idNegocio], references: [idNegocio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Negocios")
-  usuarioRegistra                                                 Usuario?          @relation("UsuarioRegistra", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Registra")
-  registrados                                                     Usuario[]         @relation("UsuarioRegistra")
-  rol                                                             Rol?              @relation("UsuarioRol", fields: [idRol], references: [idRol], map: "FK_Usuarios_Roles")
-  UsuariosSucursales_UsuariosSucursales_IdUsuarioAnulaToUsuarios UsuarioSucursal[] @relation("UsuariosSucursales_IdUsuarioAnulaToUsuarios")
-  UsuariosSucursales_UsuariosSucursales_IdUsuarioModificaToUsuarios UsuarioSucursal[] @relation("UsuariosSucursales_IdUsuarioModificaToUsuarios")
-  UsuariosSucursales_UsuariosSucursales_IdUsuarioRegistraToUsuarios UsuarioSucursal[] @relation("UsuariosSucursales_IdUsuarioRegistraToUsuarios")
-  usuarioSucursales                                               UsuarioSucursal[]
+  idUsuario                                     Int              @id @default(autoincrement()) @map("IdUsuario")
+  idRol                                         Int?             @map("IdRol")
+  username                                      String           @unique @map("Username") @db.VarChar(100)
+  email                                         String           @map("Email") @db.VarChar(150)
+  passwordHash                                  String           @map("Userpassword")
+  nombre                                        String           @map("Nombre") @db.VarChar(100)
+  apellido                                      String?          @map("Apellido") @db.VarChar(100)
+  telefono                                      String?          @map("Telefono") @db.VarChar(30)
+  palabraSecreta                                String?          @map("PalabraSecreta") @db.VarChar(255)
+  habilitado                                    Boolean          @default(true) @map("Habilitado")
+  verificado                                    Boolean          @default(false) @map("Verificado")
+  estatus                                       Int              @default(1) @map("Estatus") @db.SmallInt
+  imagen                                        String?          @map("Imagen")
+  primaryColor                                  String?          @map("PrimaryColor") @db.VarChar(30)
+  idioma                                        String           @default("es") @map("Idioma") @db.VarChar(10)
+  tema                                          String           @default("sistema") @map("Tema") @db.VarChar(20)
+  intentosFallidos                              Int              @default(0) @map("IntentosFallidos") @db.SmallInt
+  ultimoAcceso                                  DateTime?        @map("UltimoAcceso") @db.Timestamp(6)
+  bloqueadoHasta                                DateTime?        @map("BloqueadoHasta") @db.Timestamp(6)
+  idUsuarioRegistra                             Int?             @map("IdUsuarioRegistra")
+  fechaCreacion                                 DateTime         @default(now()) @map("FechaCreacion") @db.Timestamp(6)
+  idUsuarioModifica                             Int?             @map("IdUsuarioModifica")
+  fechaModificacion                             DateTime?        @map("FechaModificacion") @db.Timestamp(6)
+  anulado                                       Boolean          @default(false) @map("Anulado")
+  idUsuarioAnula                                Int?             @map("IdUsuarioAnula")
+  fechaAnulado                                  DateTime?        @map("FechaAnulado") @db.Timestamp(6)
+  comentario                                    String?          @map("Comentario")
+  darkColorScheme                               String?          @default("cinder") @map("DarkColorScheme") @db.VarChar(20)
+  idNegocio                                     Int              @map("IdNegocio")
+  Negocios_Negocios_IdUsuarioAnulaToUsuarios    Negocio[]        @relation("Negocios_IdUsuarioAnulaToUsuarios")
+  Negocios_Negocios_IdUsuarioModificaToUsuarios Negocio[]        @relation("Negocios_IdUsuarioModificaToUsuarios")
+  Negocios_Negocios_IdUsuarioRegistraToUsuarios Negocio[]        @relation("Negocios_IdUsuarioRegistraToUsuarios")
+  qrLoginSessions                               QrLoginSession[]
+  rolesAnula                                    Rol[]            @relation("RolAnula")
+  rolesModifica                                 Rol[]            @relation("RolModifica")
+  rolesRegistra                                 Rol[]            @relation("RolRegistra")
+  usuarioAnula                                  Usuario?         @relation("UsuarioAnula", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Anula")
+  anulados                                      Usuario[]        @relation("UsuarioAnula")
+  usuarioModifica                               Usuario?         @relation("UsuarioModifica", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Modifica")
+  modificados                                   Usuario[]        @relation("UsuarioModifica")
+  negocio                                       Negocio          @relation(fields: [idNegocio], references: [idNegocio], map: "FK_Usuarios_Negocios")
+  usuarioRegistra                               Usuario?         @relation("UsuarioRegistra", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Usuarios_Registra")
+  registrados                                   Usuario[]        @relation("UsuarioRegistra")
+  rol                                           Rol?             @relation("UsuarioRol", fields: [idRol], references: [idRol], map: "FK_Usuarios_Roles")
 
   @@map("Usuarios")
 }
@@ -156,49 +144,421 @@ model QrLoginSession {
   @@map("QrLoginSessions")
 }
 
-model Sucursales {
-  IdSucursal                                      Int               @id @default(autoincrement())
-  IdNegocio                                       Int
-  Nombre                                          String            @db.VarChar(150)
-  Direccion                                       String?
-  Telefono                                        String?           @db.VarChar(30)
-  FechaCreacion                                   DateTime          @default(now()) @db.Timestamp(6)
-  FechaModificacion                               DateTime?         @db.Timestamp(6)
-  FechaAnulacion                                  DateTime?         @db.Timestamp(6)
-  Anulado                                         Boolean           @default(false)
-  ComentarioAnulado                               String?
-  IdUsuarioRegistra                               Int
-  IdUsuarioModifica                               Int?
-  IdUsuarioAnula                                  Int?
-  Usuarios_Sucursales_IdUsuarioAnulaToUsuarios    Usuario?          @relation("Sucursales_IdUsuarioAnulaToUsuarios", fields: [IdUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Sucursales_Anula")
-  Usuarios_Sucursales_IdUsuarioModificaToUsuarios Usuario?          @relation("Sucursales_IdUsuarioModificaToUsuarios", fields: [IdUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Sucursales_Modifica")
-  negocio                                         Negocio           @relation(fields: [IdNegocio], references: [idNegocio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Sucursales_Negocios")
-  Usuarios_Sucursales_IdUsuarioRegistraToUsuarios Usuario           @relation("Sucursales_IdUsuarioRegistraToUsuarios", fields: [IdUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_Sucursales_Registra")
-  usuarioSucursales                               UsuarioSucursal[]
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Auditoria {
+  IdAuditoria     BigInt   @id @default(autoincrement())
+  Tabla           String   @db.VarChar(150)
+  IdRegistro      BigInt?
+  Accion          String   @db.VarChar(10)
+  IdUsuario       BigInt?
+  DatosAnteriores Json?
+  DatosNuevos     Json?
+  DireccionIP     String?  @db.Inet
+  UserAgent       String?
+  Fecha           DateTime @default(now()) @db.Timestamptz(6)
 
-  @@map("Sucursales")
+  @@index([Accion], map: "IX_Auditoria_Accion")
+  @@index([Fecha], map: "IX_Auditoria_Fecha")
+  @@index([IdUsuario], map: "IX_Auditoria_IdUsuario")
+  @@index([Tabla, IdRegistro], map: "IX_Auditoria_Tabla_IdRegistro")
 }
 
-model UsuarioSucursal {
-  idUsuarioSucursal                                       Int        @id @default(autoincrement()) @map("IdUsuarioSucursal")
-  idUsuario                                               Int        @map("IdUsuario")
-  idSucursal                                              Int        @map("IdSucursal")
-  esPrincipal                                             Boolean    @default(false) @map("EsPrincipal")
-  activo                                                  Boolean    @default(true) @map("Activo")
-  fechaCreacion                                           DateTime   @default(now()) @map("FechaCreacion") @db.Timestamp(6)
-  fechaModificacion                                       DateTime?  @map("FechaModificacion") @db.Timestamp(6)
-  fechaAnulacion                                          DateTime?  @map("FechaAnulacion") @db.Timestamp(6)
-  anulado                                                 Boolean    @default(false) @map("Anulado")
-  comentarioAnulado                                       String?    @map("ComentarioAnulado")
-  idUsuarioRegistra                                       Int        @map("IdUsuarioRegistra")
-  idUsuarioModifica                                       Int?       @map("IdUsuarioModifica")
-  idUsuarioAnula                                          Int?       @map("IdUsuarioAnula")
-  Usuarios_UsuariosSucursales_IdUsuarioAnulaToUsuarios    Usuario?   @relation("UsuariosSucursales_IdUsuarioAnulaToUsuarios", fields: [idUsuarioAnula], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_UsuariosSucursales_Anula")
-  Usuarios_UsuariosSucursales_IdUsuarioModificaToUsuarios Usuario?   @relation("UsuariosSucursales_IdUsuarioModificaToUsuarios", fields: [idUsuarioModifica], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_UsuariosSucursales_Modifica")
-  Usuarios_UsuariosSucursales_IdUsuarioRegistraToUsuarios Usuario    @relation("UsuariosSucursales_IdUsuarioRegistraToUsuarios", fields: [idUsuarioRegistra], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction, map: "FK_UsuariosSucursales_Registra")
-  sucursal                                                Sucursales @relation(fields: [idSucursal], references: [IdSucursal], onDelete: Cascade, onUpdate: NoAction, map: "FK_UsuariosSucursales_Sucursales")
-  usuario                                                 Usuario    @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade, onUpdate: NoAction, map: "FK_UsuariosSucursales_Usuarios")
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Elementos {
+  IdElemento         BigInt           @id @default(autoincrement())
+  IdProveedor        BigInt
+  Licencia           String?          @db.VarChar(100)
+  FechaEmision       DateTime?        @db.Date
+  FechaVencimiento   DateTime?        @db.Date
+  IdSeguimiento      String?          @db.VarChar(100)
+  IdTipoElemento     BigInt
+  IdFormato          BigInt?
+  IdTamano           BigInt?
+  Activo             Boolean          @default(true)
+  CostoAlquiler      Decimal?         @db.Decimal(14, 2)
+  Direccion          String?          @db.VarChar(500)
+  IdOrientacion      BigInt?
+  IdProvincia        BigInt?
+  IdMunicipio        BigInt?
+  IdSectorBarrio     BigInt?
+  Circunscripcion    String?          @db.VarChar(50)
+  Latitud            Decimal?         @db.Decimal(10, 7)
+  Longitud           Decimal?         @db.Decimal(10, 7)
+  Anulado            Boolean          @default(false)
+  AnuladoPor         BigInt?
+  ComentarioAnulado  String?          @db.VarChar(500)
+  FechaAnulacion     DateTime?        @db.Timestamptz(6)
+  FechaCreacion      DateTime         @default(now()) @db.Timestamptz(6)
+  FechaActualizacion DateTime         @default(now()) @db.Timestamptz(6)
+  CreadoPor          BigInt?
+  ActualizadoPor     BigInt?
+  Formatos           Formatos?        @relation(fields: [IdFormato], references: [IdFormato], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_Formatos")
+  Municipios         Municipios?      @relation(fields: [IdMunicipio], references: [IdMunicipio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_Municipios")
+  Orientaciones      Orientaciones?   @relation(fields: [IdOrientacion], references: [IdOrientacion], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_Orientaciones")
+  Proveedores        Proveedores      @relation(fields: [IdProveedor], references: [IdProveedor], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_Proveedores")
+  Provincias         Provincias?      @relation(fields: [IdProvincia], references: [IdProvincia], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_Provincias")
+  SectoresBarrios    SectoresBarrios? @relation(fields: [IdSectorBarrio], references: [IdSectorBarrio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_SectoresBarrios")
+  Tamanos            Tamanos?         @relation(fields: [IdTamano], references: [IdTamano], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_Tamanos")
+  TiposElementos     TiposElementos   @relation(fields: [IdTipoElemento], references: [IdTipoElemento], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_TiposElementos")
 
-  @@unique([idUsuario, idSucursal], map: "UQ_UsuarioSucursal")
-  @@map("UsuariosSucursales")
+  @@index([Activo], map: "IX_Elementos_Activo")
+  @@index([Anulado], map: "IX_Elementos_Anulado")
+  @@index([IdFormato], map: "IX_Elementos_IdFormato")
+  @@index([IdMunicipio], map: "IX_Elementos_IdMunicipio")
+  @@index([IdOrientacion], map: "IX_Elementos_IdOrientacion")
+  @@index([IdProveedor], map: "IX_Elementos_IdProveedor")
+  @@index([IdProvincia], map: "IX_Elementos_IdProvincia")
+  @@index([IdSectorBarrio], map: "IX_Elementos_IdSectorBarrio")
+  @@index([IdSeguimiento], map: "IX_Elementos_IdSeguimiento")
+  @@index([IdTamano], map: "IX_Elementos_IdTamano")
+  @@index([IdTipoElemento], map: "IX_Elementos_IdTipoElemento")
+  @@index([Licencia], map: "IX_Elementos_Licencia")
+}
+
+model Formatos {
+  IdFormato          BigInt         @id @default(autoincrement())
+  IdTipoElemento     BigInt
+  Formato            String         @db.VarChar(150)
+  IconoMapa          String?        @db.VarChar(500)
+  Activo             Boolean        @default(true)
+  FechaCreacion      DateTime       @default(now()) @db.Timestamptz(6)
+  FechaActualizacion DateTime       @default(now()) @db.Timestamptz(6)
+  CreadoPor          BigInt?
+  ActualizadoPor     BigInt?
+  Elementos          Elementos[]
+  TiposElementos     TiposElementos @relation(fields: [IdTipoElemento], references: [IdTipoElemento], onDelete: NoAction, onUpdate: NoAction, map: "FK_Formatos_TiposElementos")
+
+  @@unique([IdTipoElemento, Formato], map: "UQ_Formatos_TipoElemento_Formato")
+  @@index([IdTipoElemento], map: "IX_Formatos_IdTipoElemento")
+}
+
+model Municipios {
+  IdMunicipio        BigInt            @id @default(autoincrement())
+  IdProvincia        BigInt
+  Municipio          String            @db.VarChar(100)
+  Latitud            Decimal?          @db.Decimal(10, 7)
+  Longitud           Decimal?          @db.Decimal(10, 7)
+  Activo             Boolean           @default(true)
+  FechaCreacion      DateTime          @default(now()) @db.Timestamptz(6)
+  FechaActualizacion DateTime          @default(now()) @db.Timestamptz(6)
+  CreadoPor          BigInt?
+  ActualizadoPor     BigInt?
+  Elementos          Elementos[]
+  Provincias         Provincias        @relation(fields: [IdProvincia], references: [IdProvincia], onDelete: NoAction, onUpdate: NoAction, map: "FK_Municipios_Provincias")
+  Proveedores        Proveedores[]
+  SectoresBarrios    SectoresBarrios[]
+
+  @@unique([IdProvincia, Municipio], map: "UQ_Municipios_Provincia_Municipio")
+  @@index([IdProvincia], map: "IX_Municipios_IdProvincia")
+}
+
+model Orientaciones {
+  IdOrientacion      BigInt      @id @default(autoincrement())
+  Orientacion        String      @unique(map: "UQ_Orientaciones_Orientacion") @db.VarChar(100)
+  Activo             Boolean     @default(true)
+  FechaCreacion      DateTime    @default(now()) @db.Timestamptz(6)
+  FechaActualizacion DateTime    @default(now()) @db.Timestamptz(6)
+  CreadoPor          BigInt?
+  ActualizadoPor     BigInt?
+  Elementos          Elementos[]
+}
+
+model Proveedores {
+  IdProveedor          BigInt                 @id @default(autoincrement())
+  Proveedor            String                 @db.VarChar(200)
+  RNC                  String?                @unique(map: "UQ_Proveedores_RNC") @db.VarChar(20)
+  PersonaContacto      String?                @db.VarChar(150)
+  Cargo                String?                @db.VarChar(100)
+  Email                String?                @db.VarChar(150)
+  PaginaWeb            String?                @db.VarChar(255)
+  Direccion            String?                @db.VarChar(500)
+  IdProvincia          BigInt?
+  IdMunicipio          BigInt?
+  IdSectorBarrio       BigInt?
+  Activo               Boolean                @default(true)
+  FechaCreacion        DateTime               @default(now()) @db.Timestamptz(6)
+  FechaActualizacion   DateTime               @default(now()) @db.Timestamptz(6)
+  CreadoPor            BigInt?
+  ActualizadoPor       BigInt?
+  Elementos            Elementos[]
+  Municipios           Municipios?            @relation(fields: [IdMunicipio], references: [IdMunicipio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Proveedores_Municipios")
+  Provincias           Provincias?            @relation(fields: [IdProvincia], references: [IdProvincia], onDelete: NoAction, onUpdate: NoAction, map: "FK_Proveedores_Provincias")
+  SectoresBarrios      SectoresBarrios?       @relation(fields: [IdSectorBarrio], references: [IdSectorBarrio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Proveedores_SectoresBarrios")
+  ProveedoresTelefonos ProveedoresTelefonos[]
+
+  @@index([IdMunicipio], map: "IX_Proveedores_IdMunicipio")
+  @@index([IdProvincia], map: "IX_Proveedores_IdProvincia")
+  @@index([IdSectorBarrio], map: "IX_Proveedores_IdSectorBarrio")
+  @@index([Proveedor], map: "IX_Proveedores_Proveedor")
+}
+
+model ProveedoresTelefonos {
+  IdProveedorTelefono BigInt      @id @default(autoincrement())
+  IdProveedor         BigInt
+  Telefono            String      @db.VarChar(30)
+  Tipo                String?     @db.VarChar(30)
+  Principal           Boolean     @default(false)
+  Activo              Boolean     @default(true)
+  FechaCreacion       DateTime    @default(now()) @db.Timestamptz(6)
+  FechaActualizacion  DateTime    @default(now()) @db.Timestamptz(6)
+  CreadoPor           BigInt?
+  ActualizadoPor      BigInt?
+  Proveedores         Proveedores @relation(fields: [IdProveedor], references: [IdProveedor], onDelete: Cascade, onUpdate: NoAction, map: "FK_ProveedoresTelefonos_Proveedores")
+
+  @@index([IdProveedor], map: "IX_ProveedoresTelefonos_IdProveedor")
+}
+
+model Provincias {
+  IdProvincia        BigInt        @id @default(autoincrement())
+  Provincia          String        @unique(map: "UQ_Provincias_Provincia") @db.VarChar(100)
+  Latitud            Decimal?      @db.Decimal(10, 7)
+  Longitud           Decimal?      @db.Decimal(10, 7)
+  Activo             Boolean       @default(true)
+  FechaCreacion      DateTime      @default(now()) @db.Timestamptz(6)
+  FechaActualizacion DateTime      @default(now()) @db.Timestamptz(6)
+  CreadoPor          BigInt?
+  ActualizadoPor     BigInt?
+  Elementos          Elementos[]
+  Municipios         Municipios[]
+  Proveedores        Proveedores[]
+}
+
+model SectoresBarrios {
+  IdSectorBarrio     BigInt        @id @default(autoincrement())
+  IdMunicipio        BigInt
+  SectorBarrio       String        @db.VarChar(150)
+  Circunscripcion    String?       @db.VarChar(50)
+  Latitud            Decimal?      @db.Decimal(10, 7)
+  Longitud           Decimal?      @db.Decimal(10, 7)
+  Activo             Boolean       @default(true)
+  FechaCreacion      DateTime      @default(now()) @db.Timestamptz(6)
+  FechaActualizacion DateTime      @default(now()) @db.Timestamptz(6)
+  CreadoPor          BigInt?
+  ActualizadoPor     BigInt?
+  Elementos          Elementos[]
+  Proveedores        Proveedores[]
+  Municipios         Municipios    @relation(fields: [IdMunicipio], references: [IdMunicipio], onDelete: NoAction, onUpdate: NoAction, map: "FK_SectoresBarrios_Municipios")
+
+  @@unique([IdMunicipio, SectorBarrio], map: "UQ_SectoresBarrios_Municipio_Sector")
+  @@index([IdMunicipio], map: "IX_SectoresBarrios_IdMunicipio")
+}
+
+model Tamanos {
+  IdTamano           BigInt      @id @default(autoincrement())
+  Tamano             String      @unique(map: "UQ_Tamanos_Tamano") @db.VarChar(100)
+  Activo             Boolean     @default(true)
+  FechaCreacion      DateTime    @default(now()) @db.Timestamptz(6)
+  FechaActualizacion DateTime    @default(now()) @db.Timestamptz(6)
+  CreadoPor          BigInt?
+  ActualizadoPor     BigInt?
+  Elementos          Elementos[]
+}
+
+model TiposElementos {
+  IdTipoElemento     BigInt      @id @default(autoincrement())
+  TipoElemento       String      @unique(map: "UQ_TiposElementos_TipoElemento") @db.VarChar(150)
+  Activo             Boolean     @default(true)
+  FechaCreacion      DateTime    @default(now()) @db.Timestamptz(6)
+  FechaActualizacion DateTime    @default(now()) @db.Timestamptz(6)
+  CreadoPor          BigInt?
+  ActualizadoPor     BigInt?
+  Elementos          Elementos[]
+  Formatos           Formatos[]
+}
+
+model Anunciantes {
+  IdAnunciante            BigInt                  @id @default(autoincrement())
+  IdSectorIndustrial      BigInt
+  IdSubSectorIndustrial   BigInt
+  IdCategoriaAnunciante   BigInt
+  Anunciante              String                  @db.VarChar(200)
+  Activo                  Boolean                 @default(true)
+  FechaCreacion           DateTime                @default(now()) @db.Timestamptz(6)
+  FechaActualizacion      DateTime                @default(now()) @db.Timestamptz(6)
+  CreadoPor               BigInt?
+  ActualizadoPor          BigInt?
+  CategoriasAnunciantes   CategoriasAnunciantes   @relation(fields: [IdCategoriaAnunciante], references: [IdCategoriaAnunciante], onDelete: NoAction, onUpdate: NoAction, map: "FK_Anunciantes_CategoriasAnunciantes")
+  SectoresIndustriales    SectoresIndustriales    @relation(fields: [IdSectorIndustrial], references: [IdSectorIndustrial], onDelete: NoAction, onUpdate: NoAction, map: "FK_Anunciantes_SectoresIndustriales")
+  SubSectoresIndustriales SubSectoresIndustriales @relation(fields: [IdSubSectorIndustrial], references: [IdSubSectorIndustrial], onDelete: NoAction, onUpdate: NoAction, map: "FK_Anunciantes_SubSectoresIndustriales")
+  MarcasProductos         MarcasProductos[]
+  VersionesCampanas       VersionesCampanas[]
+
+  @@unique([IdCategoriaAnunciante, Anunciante], map: "UQ_Anunciantes_Categoria_Anunciante")
+  @@index([Anunciante], map: "IX_Anunciantes_Anunciante")
+  @@index([IdCategoriaAnunciante], map: "IX_Anunciantes_IdCategoriaAnunciante")
+  @@index([IdSectorIndustrial], map: "IX_Anunciantes_IdSectorIndustrial")
+  @@index([IdSubSectorIndustrial], map: "IX_Anunciantes_IdSubSectorIndustrial")
+}
+
+model CategoriasAnunciantes {
+  IdCategoriaAnunciante   BigInt                  @id @default(autoincrement())
+  IdSectorIndustrial      BigInt
+  IdSubSectorIndustrial   BigInt
+  CategoriaAnunciante     String                  @db.VarChar(150)
+  Activo                  Boolean                 @default(true)
+  FechaCreacion           DateTime                @default(now()) @db.Timestamptz(6)
+  FechaActualizacion      DateTime                @default(now()) @db.Timestamptz(6)
+  CreadoPor               BigInt?
+  ActualizadoPor          BigInt?
+  Anunciantes             Anunciantes[]
+  SectoresIndustriales    SectoresIndustriales    @relation(fields: [IdSectorIndustrial], references: [IdSectorIndustrial], onDelete: NoAction, onUpdate: NoAction, map: "FK_CategoriasAnunciantes_SectoresIndustriales")
+  SubSectoresIndustriales SubSectoresIndustriales @relation(fields: [IdSubSectorIndustrial], references: [IdSubSectorIndustrial], onDelete: NoAction, onUpdate: NoAction, map: "FK_CategoriasAnunciantes_SubSectoresIndustriales")
+  MarcasProductos         MarcasProductos[]
+
+  @@unique([IdSubSectorIndustrial, CategoriaAnunciante], map: "UQ_CategoriasAnunciantes_SubSector_Categoria")
+  @@index([IdSectorIndustrial], map: "IX_CategoriasAnunciantes_IdSectorIndustrial")
+  @@index([IdSubSectorIndustrial], map: "IX_CategoriasAnunciantes_IdSubSectorIndustrial")
+}
+
+model CombosAnunciantes {
+  IdComboAnunciante         BigInt                      @id @default(autoincrement())
+  ComboAnunciante           String                      @db.VarChar(1000)
+  Activo                    Boolean                     @default(true)
+  FechaCreacion             DateTime                    @default(now()) @db.Timestamptz(6)
+  FechaActualizacion        DateTime                    @default(now()) @db.Timestamptz(6)
+  CreadoPor                 BigInt?
+  ActualizadoPor            BigInt?
+  CombosAnunciantesDetalles CombosAnunciantesDetalles[]
+  VersionesCampanas         VersionesCampanas[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model CombosAnunciantesDetalles {
+  IdComboAnuncianteDetalle BigInt            @id @default(autoincrement())
+  IdComboAnunciante        BigInt
+  IdMarcaProducto          BigInt
+  Orden                    Int               @default(1) @db.SmallInt
+  FechaCreacion            DateTime          @default(now()) @db.Timestamptz(6)
+  CreadoPor                BigInt?
+  CombosAnunciantes        CombosAnunciantes @relation(fields: [IdComboAnunciante], references: [IdComboAnunciante], onDelete: Cascade, onUpdate: NoAction, map: "FK_CombosAnunciantesDetalles_CombosAnunciantes")
+  MarcasProductos          MarcasProductos   @relation(fields: [IdMarcaProducto], references: [IdMarcaProducto], onDelete: NoAction, onUpdate: NoAction, map: "FK_CombosAnunciantesDetalles_MarcasProductos")
+
+  @@unique([IdComboAnunciante, IdMarcaProducto], map: "UQ_CombosAnunciantesDetalles_Combo_Marca")
+  @@unique([IdComboAnunciante, Orden], map: "UQ_CombosAnunciantesDetalles_Combo_Orden")
+  @@index([IdComboAnunciante], map: "IX_CombosAnunciantesDetalles_IdComboAnunciante")
+  @@index([IdMarcaProducto], map: "IX_CombosAnunciantesDetalles_IdMarcaProducto")
+}
+
+model FirmasMarcasAguaSeguimiento {
+  IdFirmaMarcaAguaSeguimiento BigInt            @id @default(autoincrement())
+  IdVersionCampana            BigInt
+  ImagenMuestra               String?           @db.VarChar(500)
+  VideoMuestra                String?           @db.VarChar(500)
+  Activo                      Boolean           @default(true)
+  FechaCreacion               DateTime          @default(now()) @db.Timestamptz(6)
+  FechaActualizacion          DateTime          @default(now()) @db.Timestamptz(6)
+  CreadoPor                   BigInt?
+  ActualizadoPor              BigInt?
+  VersionesCampanas           VersionesCampanas @relation(fields: [IdVersionCampana], references: [IdVersionCampana], onDelete: NoAction, onUpdate: NoAction, map: "FK_FirmasMarcasAgua_VersionesCampanas")
+
+  @@index([IdVersionCampana], map: "IX_FirmasMarcasAgua_IdVersionCampana")
+}
+
+model IconosMarcasProductos {
+  IdIconoMarcaProducto BigInt          @id @default(autoincrement())
+  IdMarcaProducto      BigInt
+  Imagen               String          @db.VarChar(500)
+  Activo               Boolean         @default(true)
+  FechaCreacion        DateTime        @default(now()) @db.Timestamptz(6)
+  FechaActualizacion   DateTime        @default(now()) @db.Timestamptz(6)
+  CreadoPor            BigInt?
+  ActualizadoPor       BigInt?
+  MarcasProductos      MarcasProductos @relation(fields: [IdMarcaProducto], references: [IdMarcaProducto], onDelete: NoAction, onUpdate: NoAction, map: "FK_IconosMarcasProductos_MarcasProductos")
+
+  @@index([IdMarcaProducto], map: "IX_IconosMarcasProductos_IdMarcaProducto")
+}
+
+model MarcasProductos {
+  IdMarcaProducto           BigInt                      @id @default(autoincrement())
+  IdAnunciante              BigInt
+  IdCategoriaAnunciante     BigInt
+  MarcaProducto             String                      @db.VarChar(200)
+  Activo                    Boolean                     @default(true)
+  FechaCreacion             DateTime                    @default(now()) @db.Timestamptz(6)
+  FechaActualizacion        DateTime                    @default(now()) @db.Timestamptz(6)
+  CreadoPor                 BigInt?
+  ActualizadoPor            BigInt?
+  CombosAnunciantesDetalles CombosAnunciantesDetalles[]
+  IconosMarcasProductos     IconosMarcasProductos[]
+  Anunciantes               Anunciantes                 @relation(fields: [IdAnunciante], references: [IdAnunciante], onDelete: NoAction, onUpdate: NoAction, map: "FK_MarcasProductos_Anunciantes")
+  CategoriasAnunciantes     CategoriasAnunciantes       @relation(fields: [IdCategoriaAnunciante], references: [IdCategoriaAnunciante], onDelete: NoAction, onUpdate: NoAction, map: "FK_MarcasProductos_CategoriasAnunciantes")
+  VersionesCampanas         VersionesCampanas[]
+
+  @@unique([IdAnunciante, MarcaProducto], map: "UQ_MarcasProductos_Anunciante_MarcaProducto")
+  @@index([IdAnunciante], map: "IX_MarcasProductos_IdAnunciante")
+  @@index([IdCategoriaAnunciante], map: "IX_MarcasProductos_IdCategoriaAnunciante")
+  @@index([MarcaProducto], map: "IX_MarcasProductos_MarcaProducto")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model PeriodosColocacion {
+  IdPeriodoColocacion  BigInt   @id @default(autoincrement())
+  FechaInicial         DateTime @db.Date
+  FechaFinal           DateTime @db.Date
+  GeneralesSeguimiento String?
+  Activo               Boolean  @default(true)
+  FechaCreacion        DateTime @default(now()) @db.Timestamptz(6)
+  FechaActualizacion   DateTime @default(now()) @db.Timestamptz(6)
+  CreadoPor            BigInt?
+  ActualizadoPor       BigInt?
+
+  @@index([FechaInicial, FechaFinal], map: "IX_PeriodosColocacion_Fechas")
+}
+
+model SectoresIndustriales {
+  IdSectorIndustrial      BigInt                    @id @default(autoincrement())
+  SectorIndustrial        String                    @unique(map: "UQ_SectoresIndustriales_SectorIndustrial") @db.VarChar(150)
+  Activo                  Boolean                   @default(true)
+  FechaCreacion           DateTime                  @default(now()) @db.Timestamptz(6)
+  FechaActualizacion      DateTime                  @default(now()) @db.Timestamptz(6)
+  CreadoPor               BigInt?
+  ActualizadoPor          BigInt?
+  Anunciantes             Anunciantes[]
+  CategoriasAnunciantes   CategoriasAnunciantes[]
+  SubSectoresIndustriales SubSectoresIndustriales[]
+}
+
+model SubSectoresIndustriales {
+  IdSubSectorIndustrial BigInt                  @id @default(autoincrement())
+  IdSectorIndustrial    BigInt
+  SubSectorIndustrial   String                  @db.VarChar(150)
+  Activo                Boolean                 @default(true)
+  FechaCreacion         DateTime                @default(now()) @db.Timestamptz(6)
+  FechaActualizacion    DateTime                @default(now()) @db.Timestamptz(6)
+  CreadoPor             BigInt?
+  ActualizadoPor        BigInt?
+  Anunciantes           Anunciantes[]
+  CategoriasAnunciantes CategoriasAnunciantes[]
+  SectoresIndustriales  SectoresIndustriales    @relation(fields: [IdSectorIndustrial], references: [IdSectorIndustrial], onDelete: NoAction, onUpdate: NoAction, map: "FK_SubSectoresIndustriales_SectoresIndustriales")
+
+  @@unique([IdSectorIndustrial, SubSectorIndustrial], map: "UQ_SubSectoresIndustriales_Sector_SubSector")
+  @@index([IdSectorIndustrial], map: "IX_SubSectoresIndustriales_IdSectorIndustrial")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model VersionesCampanas {
+  IdVersionCampana            BigInt                        @id @default(autoincrement())
+  LeyendaSeguimiento          String?                       @db.VarChar(500)
+  IdAnunciante                BigInt
+  IdMarcaProducto             BigInt?
+  VersionCampana              String                        @db.VarChar(250)
+  IdComboAnunciante           BigInt?
+  Activo                      Boolean                       @default(true)
+  Anulado                     Boolean                       @default(false)
+  AnuladoPor                  BigInt?
+  ComentarioAnulado           String?                       @db.VarChar(500)
+  FechaAnulacion              DateTime?                     @db.Timestamptz(6)
+  FechaCreacion               DateTime                      @default(now()) @db.Timestamptz(6)
+  FechaActualizacion          DateTime                      @default(now()) @db.Timestamptz(6)
+  CreadoPor                   BigInt?
+  ActualizadoPor              BigInt?
+  FirmasMarcasAguaSeguimiento FirmasMarcasAguaSeguimiento[]
+  Anunciantes                 Anunciantes                   @relation(fields: [IdAnunciante], references: [IdAnunciante], onDelete: NoAction, onUpdate: NoAction, map: "FK_VersionesCampanas_Anunciantes")
+  CombosAnunciantes           CombosAnunciantes?            @relation(fields: [IdComboAnunciante], references: [IdComboAnunciante], onDelete: NoAction, onUpdate: NoAction, map: "FK_VersionesCampanas_CombosAnunciantes")
+  MarcasProductos             MarcasProductos?              @relation(fields: [IdMarcaProducto], references: [IdMarcaProducto], onDelete: NoAction, onUpdate: NoAction, map: "FK_VersionesCampanas_MarcasProductos")
+
+  @@index([IdAnunciante], map: "IX_VersionesCampanas_IdAnunciante")
+  @@index([IdComboAnunciante], map: "IX_VersionesCampanas_IdComboAnunciante")
+  @@index([IdMarcaProducto], map: "IX_VersionesCampanas_IdMarcaProducto")
+  @@index([VersionCampana], map: "IX_VersionesCampanas_VersionCampana")
 }

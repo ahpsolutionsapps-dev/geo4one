@@ -1,3 +1,15 @@
+-- Usuario mínimo para bases vacías (FK de Negocios.IdUsuarioRegistra).
+INSERT INTO "Roles" ("Rol", "Descripcion", "FechaCreacion")
+SELECT 'Administrador del sistema', 'Rol creado en migración de negocios', CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM "Usuarios");
+
+INSERT INTO "Usuarios" ("IdRol", "Username", "Email", "Userpassword", "Nombre", "FechaCreacion")
+SELECT r."IdRol", '__bootstrap__', 'bootstrap@local.invalid', '!', 'Migración', CURRENT_TIMESTAMP
+FROM "Roles" r
+WHERE NOT EXISTS (SELECT 1 FROM "Usuarios")
+ORDER BY r."IdRol"
+LIMIT 1;
+
 -- CreateTable
 CREATE TABLE "Negocios" (
     "IdNegocio" SERIAL NOT NULL,
@@ -18,7 +30,7 @@ CREATE TABLE "Negocios" (
 );
 
 INSERT INTO "Negocios" ("Nombre", "IdUsuarioRegistra")
-SELECT 'Negocio principal', COALESCE((SELECT MIN("IdUsuario") FROM "Usuarios"), 1);
+SELECT 'Negocio principal', MIN("IdUsuario") FROM "Usuarios";
 
 ALTER TABLE "Roles" ADD COLUMN "IdNegocio" INTEGER;
 UPDATE "Roles" SET "IdNegocio" = 1;
@@ -35,3 +47,7 @@ ALTER TABLE "Usuarios"
 ADD CONSTRAINT "FK_Usuarios_Negocios"
 FOREIGN KEY ("IdNegocio") REFERENCES "Negocios"("IdNegocio")
 ON DELETE RESTRICT ON UPDATE CASCADE;
+
+ALTER TABLE "Negocios" ADD CONSTRAINT "FK_Negocios_Registra" FOREIGN KEY ("IdUsuarioRegistra") REFERENCES "Usuarios"("IdUsuario") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "Negocios" ADD CONSTRAINT "FK_Negocios_Modifica" FOREIGN KEY ("IdUsuarioModifica") REFERENCES "Usuarios"("IdUsuario") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "Negocios" ADD CONSTRAINT "FK_Negocios_Anula" FOREIGN KEY ("IdUsuarioAnula") REFERENCES "Usuarios"("IdUsuario") ON DELETE NO ACTION ON UPDATE NO ACTION;

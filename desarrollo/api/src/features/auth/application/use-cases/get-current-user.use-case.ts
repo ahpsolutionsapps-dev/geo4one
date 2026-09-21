@@ -4,7 +4,6 @@ import { PublicUserDTO } from '../dto/auth-response.dto';
 
 export interface CurrentUserResult {
   user: PublicUserDTO;
-  idSucursal: number | null;
 }
 
 export class GetCurrentUserUseCase {
@@ -22,7 +21,6 @@ export class GetCurrentUserUseCase {
           : 'Tu cuenta está deshabilitada',
       );
     }
-    const idSucursal = await this.users.findPrincipalSucursalId(idUsuario);
-    return { user: user.toPublic(), idSucursal };
+    return { user: user.toPublic() };
   }
 }

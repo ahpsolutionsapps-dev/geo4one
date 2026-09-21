@@ -4,7 +4,7 @@
 
 | Archivo | Uso |
 |---------|-----|
-| `schema.prisma` | 8 modelos: `Modulo`, `Negocio`, `Rol`, `Usuario`, `RolModulo`, `QrLoginSession`, `Sucursales`, `UsuarioSucursal` |
+| `schema.prisma` | Identidad + módulo elementos (sin sucursales) |
 | `migrations-reducido/` | Una migración inicial (`20250917120000_init_auth_identity`) |
 | `prisma.config.ts` | Config por defecto (esquema + migraciones reducidas) |
 | `prisma.config.reducido.ts` | Alias de la config reducida |

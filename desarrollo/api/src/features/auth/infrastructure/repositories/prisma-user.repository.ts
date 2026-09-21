@@ -54,32 +54,6 @@ export class PrismaUserRepository implements UserRepository {
     return row ? toDomain(row) : null;
   }
 
-  async findPrincipalSucursalId(idUsuario: number): Promise<number | null> {
-    const principal = await this.prisma.usuarioSucursal.findFirst({
-      where: {
-        idUsuario,
-        activo: true,
-        anulado: false,
-        esPrincipal: true,
-      },
-      select: { idSucursal: true },
-    });
-    if (principal) {
-      return principal.idSucursal;
-    }
-
-    const fallback = await this.prisma.usuarioSucursal.findFirst({
-      where: {
-        idUsuario,
-        activo: true,
-        anulado: false,
-      },
-      orderBy: { idUsuarioSucursal: 'asc' },
-      select: { idSucursal: true },
-    });
-    return fallback?.idSucursal ?? null;
-  }
-
   async findRolName(idUsuario: number): Promise<string | null> {
     const row = await this.prisma.usuario.findUnique({
       where: { idUsuario },

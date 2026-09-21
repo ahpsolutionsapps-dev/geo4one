@@ -13,7 +13,6 @@ export interface UserRepository {
   findById(idUsuario: number): Promise<User | null>;
   findByUsername(username: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
-  findPrincipalSucursalId(idUsuario: number): Promise<number | null>;
   findRolName(idUsuario: number): Promise<string | null>;
   create(input: NewUserInput): Promise<User>;
   updatePassword(idUsuario: number, userpassword: string): Promise<void>;

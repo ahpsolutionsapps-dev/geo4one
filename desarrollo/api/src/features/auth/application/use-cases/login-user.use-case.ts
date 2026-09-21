@@ -28,7 +28,6 @@ export class LoginUserUseCase {
     }
 
     const token = this.tokens.sign({ sub: String(user.idUsuario), username: user.username });
-    const idSucursal = await this.users.findPrincipalSucursalId(user.idUsuario);
-    return { user: user.toPublic(), token, idSucursal };
+    return { user: user.toPublic(), token };
   }
 }
