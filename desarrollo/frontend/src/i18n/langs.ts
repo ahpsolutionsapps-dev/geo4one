@@ -1,4 +1,12 @@
 export const locales = {
+  es: {
+    label: "Español",
+    dayjs: () => import("dayjs/locale/es"),
+    flatpickr: () =>
+      import("flatpickr/dist/l10n/es").then((module) => module.default || module),
+    i18n: () => import("./locales/es/translations.json"),
+    flag: "spain",
+  },
   en: {
     label: "English",
     dayjs: () => import("dayjs/locale/en"),

@@ -1,0 +1,56 @@
+{
+  "nav": {
+    "dashboard": {
+      "dashboard": "Dashboard"
+    },
+    "mapa": {
+      "mapa": "Mapa"
+    },
+    "elementos": {
+      "elementos": "Elementos",
+      "listado": "Listado",
+      "nuevo": "Nuevo elemento"
+    },
+    "proveedores": {
+      "proveedores": "Proveedores"
+    },
+    "anunciantes": {
+      "anunciantes": "Anunciantes"
+    },
+    "campañas": {
+      "campañas": "Campañas"
+    },
+    "periodos": {
+      "periodos": "Periodos de colocación"
+    },
+    "reportes": {
+      "reportes": "Reportes"
+    },
+    "catalogos": {
+      "catalogos": "Catálogos",
+      "orientaciones": "Orientaciones",
+      "tipos": "Tipos de elementos",
+      "formatos": "Formatos",
+      "tamaños": "Tamaños",
+      "ubicaciones": "Ubicaciones"
+    },
+    "administracion": {
+      "administracion": "Administración",
+      "usuarios": "Usuarios",
+      "configuracion": "Configuración",
+      "auditoria": "Auditoría"
+    },
+    "dashboards": {
+      "dashboards": "Dashboards",
+      "home": "Inicio",
+      "elementos": "Elementos",
+      "reportes": "Reportes",
+      "ubicaciones": "Ubicaciones"
+    },
+    "settings": {
+      "settings": "Configuración",
+      "general": "General",
+      "appearance": "Apariencia"
+    }
+  }
+}

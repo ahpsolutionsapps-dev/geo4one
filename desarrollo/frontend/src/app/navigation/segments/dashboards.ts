@@ -25,5 +25,21 @@ export const dashboards: NavigationTree = {
       transKey: "nav.dashboards.elementos",
       icon: "dashboards.elementos",
     },
+    {
+      id: "dashboards.reportes",
+      path: path(ROOT_DASHBOARDS, "/elementos"),
+      type: "item",
+      title: "Reportes",
+      transKey: "nav.dashboards.reportes",
+      icon: "reportes",
+    },
+    {
+      id: "dashboards.ubicaciones",
+      path: path(ROOT_DASHBOARDS, "/elementos"),
+      type: "item",
+      title: "Ubicaciones",
+      transKey: "nav.dashboards.ubicaciones",
+      icon: "ubicaciones",
+    },
   ],
 };

@@ -1,8 +1,51 @@
 {
   "nav": {
+    "dashboard": {
+      "dashboard": "لوحة التحكم"
+    },
+    "mapa": {
+      "mapa": "الخريطة"
+    },
+    "elementos": {
+      "elementos": "العناصر",
+      "listado": "قائمة العناصر",
+      "nuevo": "عنصر جديد"
+    },
+    "proveedores": {
+      "proveedores": "الموردون"
+    },
+    "anunciantes": {
+      "anunciantes": "المعلنون"
+    },
+    "campañas": {
+      "campañas": "الحملات"
+    },
+    "periodos": {
+      "periodos": "فترات التثبيت"
+    },
+    "reportes": {
+      "reportes": "التقارير"
+    },
+    "catalogos": {
+      "catalogos": "الكتالوجات",
+      "orientaciones": "الاتجاهات",
+      "tipos": "أنواع العناصر",
+      "formatos": "التنسيقات",
+      "tamaños": "الأحجام",
+      "ubicaciones": "المواقع"
+    },
+    "administracion": {
+      "administracion": "الإدارة",
+      "usuarios": "المستخدمون",
+      "configuracion": "الإعدادات",
+      "auditoria": "المراجعة"
+    },
     "dashboards": {
       "dashboards": "لوحات التحكم",
-      "home": "الرئيسية"
+      "home": "الرئيسية",
+      "elementos": "العناصر",
+      "reportes": "التقارير",
+      "ubicaciones": "المواقع"
     },
     "settings": {
       "settings": "الإعدادات",

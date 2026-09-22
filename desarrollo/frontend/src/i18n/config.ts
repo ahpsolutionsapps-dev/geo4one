@@ -5,23 +5,33 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 // Local Imports
 import { type LocaleCode, supportedLanguages } from "./langs";
+import esTranslations from "./locales/es/translations.json";
+import enTranslations from "./locales/en/translations.json";
+import arTranslations from "./locales/ar/translations.json";
 
 // ----------------------------------------------------------------------
 
-export const defaultLang: LocaleCode = "en";
-export const fallbackLang: LocaleCode = "en";
+export const defaultLang: LocaleCode = "es";
+export const fallbackLang: LocaleCode = "es";
+
+const initialLng = "es";
 
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
+    resources: {
+      es: { translations: esTranslations },
+      en: { translations: enTranslations },
+      ar: { translations: arTranslations },
+    },
     detection: {
       order: ["localStorage", "navigator"],
       lookupLocalStorage: "i18nextLng",
       lookupSessionStorage: "i18nextLng",
     },
     fallbackLng: fallbackLang,
-    lng: localStorage.getItem("i18nextLng") || defaultLang,
+    lng: initialLng,
     supportedLngs: supportedLanguages,
     ns: ["translations"],
     defaultNS: "translations",

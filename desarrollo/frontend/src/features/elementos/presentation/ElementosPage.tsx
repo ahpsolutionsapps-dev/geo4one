@@ -1,12 +1,24 @@
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { Dialog, DialogPanel, Tab, TabGroup, TabList, Transition, TransitionChild } from '@headlessui/react';
+import {
+  DocumentPlusIcon,
+  EyeIcon,
+  PencilIcon,
+  TrashIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+import { Fragment, useState } from 'react';
 import { Page } from '@/components/shared/Page';
 import {
   Badge,
   Button,
   Card,
+  Input,
+  Radio,
+  Select,
   Table,
   TBody,
   Td,
+  Textarea,
   Th,
   THead,
   Tr,
@@ -82,6 +94,7 @@ const statusColors = {
 
 export default function ElementosPage() {
   const { items, loading, error } = useElementos();
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const rows = items.length > 0 ? items : fallbackRows;
 
   return (
@@ -103,7 +116,11 @@ export default function ElementosPage() {
             Total de registros del inventario
           </div>
 
-          <Button color="primary" className="w-full sm:w-auto">
+          <Button
+            color="primary"
+            className="w-full sm:w-auto"
+            onClick={() => setShowCreateModal(true)}
+          >
             + Nuevo elemento
           </Button>
         </div>
@@ -242,7 +259,294 @@ export default function ElementosPage() {
             </Table>
           </div>
         </Card>
+
+        <ElementoFormModal
+          show={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+        />
       </div>
     </Page>
+  );
+}
+
+const modalTabs = [
+  'Información General',
+  'Ubicación',
+  'Licencia y Costos',
+  'Archivos y Observaciones',
+];
+
+function RequiredLabel({ text }: { text: string }) {
+  return (
+    <>
+      {text} <span className="text-error">*</span>
+    </>
+  );
+}
+
+function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => void }) {
+  return (
+    <Transition show={show} as={Fragment}>
+      <Dialog
+        as="div"
+        className="fixed inset-0 z-100 flex items-center justify-center p-3 sm:p-5"
+        onClose={onClose}
+      >
+        <TransitionChild
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px]" />
+        </TransitionChild>
+
+        <TransitionChild
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0 scale-95"
+          enterTo="opacity-100 scale-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100 scale-100"
+          leaveTo="opacity-0 scale-95"
+        >
+          <DialogPanel className="scrollbar-sm relative w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-dark-700">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400">
+                  <DocumentPlusIcon className="size-7" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-semibold text-gray-800 dark:text-dark-100">
+                    Crear Nuevo Elemento
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-dark-300">
+                    Complete la información para registrar un nuevo elemento publicitario.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                variant="flat"
+                isIcon
+                className="mt-0.5 size-8 rounded-full"
+                aria-label="Cerrar modal"
+                onClick={onClose}
+              >
+                <XMarkIcon className="size-5" />
+              </Button>
+            </div>
+
+            <div className="max-h-[calc(100vh-10rem)] overflow-y-auto px-5 pb-5 sm:px-6 sm:pb-6">
+              <TabGroup>
+                <TabList className="hide-scrollbar mt-2 flex overflow-x-auto border-b border-gray-200 dark:border-dark-500">
+                  {modalTabs.map((tab) => (
+                    <Tab
+                      key={tab}
+                      className="-mb-px shrink-0 border-b-2 border-transparent px-3 py-3 text-sm text-gray-500 outline-hidden transition hover:text-primary-600 data-selected:border-primary-500 data-selected:font-medium data-selected:text-primary-600 dark:text-dark-300 dark:hover:text-primary-400 dark:data-selected:text-primary-400"
+                    >
+                      {tab}
+                    </Tab>
+                  ))}
+                </TabList>
+              </TabGroup>
+
+              <div className="space-y-5 pt-5">
+                <section className="space-y-3">
+                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">Proveedor</h4>
+                  <div className="grid gap-3 md:grid-cols-12">
+                    <Select
+                      classNames={{ root: 'md:col-span-8' }}
+                      label={<RequiredLabel text="Suplidor / Proveedor" />}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Seleccione un suplidor
+                      </option>
+                      <option value="vallas-estilo">Vallas Estilo</option>
+                      <option value="media-group">Media Group SRL</option>
+                      <option value="vision-publicidad">Vision Publicidad</option>
+                    </Select>
+
+                    <Input
+                      classNames={{ root: 'md:col-span-4' }}
+                      label="ID-Suplidor"
+                      placeholder="Se generará automáticamente"
+                      readOnly
+                      disabled
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-500">
+                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">Datos del Elemento</h4>
+                  <div className="grid gap-3 md:grid-cols-12">
+                    <Select
+                      classNames={{ root: 'md:col-span-4' }}
+                      label={<RequiredLabel text="Tipo de Elemento" />}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Seleccione un tipo
+                      </option>
+                      <option value="estatico">Estático</option>
+                      <option value="digital">Digital</option>
+                      <option value="movil">Móvil</option>
+                    </Select>
+
+                    <Select
+                      classNames={{ root: 'md:col-span-4' }}
+                      label={<RequiredLabel text="Formato" />}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Seleccione un formato
+                      </option>
+                      <option value="valla">Valla</option>
+                      <option value="mupi">Mupi</option>
+                      <option value="pantalla">Pantalla</option>
+                    </Select>
+
+                    <Select
+                      classNames={{ root: 'md:col-span-4' }}
+                      label={<RequiredLabel text="Tamaño" />}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Seleccione un tamaño
+                      </option>
+                      <option value="4x6">4 x 6</option>
+                      <option value="8x14">8 x 14</option>
+                      <option value="12x36">12 x 36</option>
+                    </Select>
+
+                    <Select
+                      classNames={{ root: 'md:col-span-5' }}
+                      label="Orientación"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Seleccione una orientación
+                      </option>
+                      <option value="norte">Norte</option>
+                      <option value="sur">Sur</option>
+                      <option value="este">Este</option>
+                      <option value="oeste">Oeste</option>
+                    </Select>
+
+                    <div className="md:col-span-7">
+                      <label className="input-label">
+                        <span className="input-label">
+                          <RequiredLabel text="Estatus" />
+                        </span>
+                      </label>
+                      <div className="mt-3 flex flex-wrap items-center gap-5">
+                        <Radio name="status" label="Sí (Activo)" defaultChecked />
+                        <Radio name="status" label="No (Inactivo)" />
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-500">
+                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">Información Básica</h4>
+                  <div className="grid gap-3 md:grid-cols-12">
+                    <Input
+                      classNames={{ root: 'md:col-span-8' }}
+                      label={<RequiredLabel text="Nombre / Referencia del Elemento" />}
+                      placeholder="Ej. ELM-0011"
+                    />
+
+                    <Input
+                      classNames={{ root: 'md:col-span-4' }}
+                      label="ID-Seguimiento"
+                      placeholder="Ej. SEG-2025-001"
+                    />
+
+                    <Textarea
+                      classNames={{ root: 'md:col-span-12' }}
+                      label={<RequiredLabel text="Dirección" />}
+                      rows={2}
+                      placeholder="Ingrese la dirección exacta del elemento"
+                    />
+                  </div>
+                </section>
+
+                <section className="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-500">
+                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">Ubicación</h4>
+                  <div className="grid gap-3 md:grid-cols-12">
+                    <Select
+                      classNames={{ root: 'md:col-span-4' }}
+                      label={<RequiredLabel text="Provincia" />}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Seleccione una provincia
+                      </option>
+                      <option value="santo-domingo">Santo Domingo</option>
+                      <option value="santiago">Santiago</option>
+                    </Select>
+
+                    <Select
+                      classNames={{ root: 'md:col-span-4' }}
+                      label={<RequiredLabel text="Municipio" />}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Seleccione un municipio
+                      </option>
+                      <option value="distrito-nacional">Distrito Nacional</option>
+                      <option value="santo-domingo-este">Santo Domingo Este</option>
+                    </Select>
+
+                    <Select
+                      classNames={{ root: 'md:col-span-4' }}
+                      label={<RequiredLabel text="Sector / Barrio" />}
+                      defaultValue=""
+                    >
+                      <option value="" disabled>
+                        Seleccione un sector
+                      </option>
+                      <option value="naco">Naco</option>
+                      <option value="piantini">Piantini</option>
+                    </Select>
+
+                    <Input
+                      classNames={{ root: 'md:col-span-5' }}
+                      label="Circunscripción"
+                      placeholder="Ingrese la circunscripción"
+                    />
+
+                    <Input
+                      classNames={{ root: 'md:col-span-3.5' }}
+                      label="Latitud"
+                      placeholder="Ej. 18.4861"
+                    />
+
+                    <Input
+                      classNames={{ root: 'md:col-span-3.5' }}
+                      label="Longitud"
+                      placeholder="Ej. -69.9312"
+                    />
+                  </div>
+                </section>
+              </div>
+
+              <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-gray-200 pt-5 dark:border-dark-500">
+                <Button variant="outlined" className="min-w-[9rem]" onClick={onClose}>
+                  Cancelar
+                </Button>
+                <Button color="primary" className="min-w-[12rem]">
+                  Guardar Elemento
+                </Button>
+              </div>
+            </div>
+          </DialogPanel>
+        </TransitionChild>
+      </Dialog>
+    </Transition>
   );
 }

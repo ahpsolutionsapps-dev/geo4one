@@ -1,7 +1,6 @@
 // Import Dependencies
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import invariant from "tiny-invariant";
 
 // Local Imports
 import { Collapse } from "@/components/ui";
@@ -18,10 +17,9 @@ export function Group({ data }: { data: NavigationTree }) {
   const { t } = useTranslation();
   const { cardSkin } = useThemeContext();
 
-  invariant(
-    data.childs && data.childs.length > 0,
-    "[Group] Group menu must have at least one child",
-  );
+  if (!data.childs?.length) {
+    return null;
+  }
 
   return (
     <div className="pt-3">
