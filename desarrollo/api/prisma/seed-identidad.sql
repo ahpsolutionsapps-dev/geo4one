@@ -26,7 +26,7 @@ INSERT INTO "Roles" (
 VALUES (1, 1, 'Super Admin', 'Administrador del sistema', false, NOW())
 ON CONFLICT ("IdRol") DO NOTHING;
 
--- Sustituye el hash por uno generado con bcrypt para tu contraseña.
+-- Credencial de desarrollo: administrador@example.com / 123456.
 INSERT INTO "Usuarios" (
   "IdUsuario",
   "IdNegocio",
@@ -46,9 +46,9 @@ VALUES (
   1,
   1,
   1,
-  'admin',
-  'admin@example.com',
-  '$2b$10$REPLACE_WITH_BCRYPT_HASH',
+  'Super Administrador',
+  'administrador@example.com',
+  '$2a$10$EHI/gz2niufJSs7P9IFEnetxqlyJdn93ZjeyF5u1ewXMtogO0sMXW',
   'Administrador',
   true,
   true,

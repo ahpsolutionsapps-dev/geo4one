@@ -72,7 +72,7 @@ Base de datos por entorno:
 
 Credenciales seed de desarrollo (tras `npm run db:setup:dev`):
 
-- Email: `administrador@localhost`
+- Email: `administrador@example.com`
 - Clave: `123456`
 
 ## Feature: auth
@@ -83,7 +83,7 @@ Endpoints expuestos bajo `/api/auth`:
 - `POST /api/auth/login` — autentica y devuelve un JWT.
 - `GET  /api/auth/me` — devuelve el usuario autenticado (requiere `Authorization: Bearer <token>`).
 
-> El repositorio actual usa una implementación en memoria (`InMemoryUserRepository`). Sustituir por un repositorio real (Postgres, MongoDB, etc.) sin tocar las capas de dominio/aplicación.
+> El repositorio actual usa Postgres a través de Prisma. Sustituir la persistencia por otro motor sin tocar las capas de dominio/aplicación.
 
 
 

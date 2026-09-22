@@ -35,6 +35,13 @@ const protectedRoutes: RouteObject = {
                   .default,
               }),
             },
+            {
+              path: "elementos",
+              lazy: async () => ({
+                Component: (await import("@/features/elementos/presentation/ElementosPage"))
+                  .default,
+              }),
+            },
           ],
         },
       ],

@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { NotFoundError } from '../../core/errors/app-error';
 
+type EstadosDocumentosPrismaLike = {
+  findMany?: (...args: any[]) => Promise<any[]>;
+  findFirst?: (...args: any[]) => Promise<any | null>;
+  createMany?: (...args: any[]) => Promise<any>;
+};
+
 export const MODULO_CUENTA_PAGAR = 'CuentaPagar';
 
 type EstadoDocumentoDefault = {
@@ -49,14 +55,18 @@ function normalizeLabel(value: string): string {
 }
 
 async function findEstadoByNombre(
-  prisma: Pick<PrismaClient, 'estadosDocumentos'>,
+  prisma: { estadosDocumentos?: EstadosDocumentosPrismaLike },
   modulo: string,
   nombre: string,
 ) {
   const target = normalizeLabel(nombre);
-  const rows = await prisma.estadosDocumentos.findMany({
+  const rows = await prisma.estadosDocumentos?.findMany?.({
     where: { Modulo: modulo },
   });
+
+  if (!rows) {
+    return null;
+  }
 
   return (
     rows.find(
@@ -68,11 +78,11 @@ async function findEstadoByNombre(
 }
 
 async function ensureDefaultEstadosDocumentos(
-  prisma: Pick<PrismaClient, 'estadosDocumentos'>,
+  prisma: { estadosDocumentos?: EstadosDocumentosPrismaLike },
   modulo: string,
 ): Promise<void> {
   const defaults = DEFAULT_ESTADOS_POR_MODULO[modulo];
-  if (!defaults) {
+  if (!defaults || !prisma.estadosDocumentos?.createMany) {
     return;
   }
 
@@ -95,7 +105,7 @@ async function ensureDefaultEstadosDocumentos(
 }
 
 export async function getEstadoDocumentoByNombre(
-  prisma: Pick<PrismaClient, 'estadosDocumentos'>,
+  prisma: { estadosDocumentos?: EstadosDocumentosPrismaLike },
   modulo: string,
   nombre: string,
 ): Promise<EstadoDocumentoInfo> {
@@ -116,11 +126,11 @@ export async function getEstadoDocumentoByNombre(
 }
 
 export async function getEstadoDocumentoById(
-  prisma: Pick<PrismaClient, 'estadosDocumentos'>,
+  prisma: { estadosDocumentos?: EstadosDocumentosPrismaLike },
   idEstadoDocumento: number,
   modulo?: string,
 ): Promise<EstadoDocumentoInfo> {
-  const row = await prisma.estadosDocumentos.findFirst({
+  const row = await prisma.estadosDocumentos?.findFirst?.({
     where: {
       IdEstadoDocumento: idEstadoDocumento,
       ...(modulo ? { Modulo: modulo } : {}),
@@ -135,21 +145,21 @@ export async function getEstadoDocumentoById(
 }
 
 export async function listEstadosDocumentosByModulo(
-  prisma: Pick<PrismaClient, 'estadosDocumentos'>,
+  prisma: { estadosDocumentos?: EstadosDocumentosPrismaLike },
   modulo: string,
 ): Promise<EstadoDocumentoInfo[]> {
-  let rows = await prisma.estadosDocumentos.findMany({
+  let rows = await prisma.estadosDocumentos?.findMany?.({
     where: { Modulo: modulo, Anulado: false },
     orderBy: [{ Orden: 'asc' }, { Nombre: 'asc' }],
   });
 
-  if (rows.length === 0) {
+  if (!rows || rows.length === 0) {
     await ensureDefaultEstadosDocumentos(prisma, modulo);
-    rows = await prisma.estadosDocumentos.findMany({
+    rows = await prisma.estadosDocumentos?.findMany?.({
       where: { Modulo: modulo, Anulado: false },
       orderBy: [{ Orden: 'asc' }, { Nombre: 'asc' }],
-    });
+    }) ?? [];
   }
 
-  return rows.map(toEstadoInfo);
+  return (rows ?? []).map(toEstadoInfo);
 }

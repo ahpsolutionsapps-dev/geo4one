@@ -10,6 +10,7 @@ import { authMiddleware } from './features/auth/presentation/middlewares/auth.mi
 import { requireVerifiedMiddleware } from './features/auth/presentation/middlewares/require-verified.middleware';
 import { buildRolesRouter } from './features/roles/presentation/roles.routes';
 import { buildUsuariosRouter } from './features/usuarios/presentation/usuarios.routes';
+import { buildElementosRouter } from './features/elementos/presentation/elementos.routes';
 
 export function createApp(): Application {
   const app = express();
@@ -31,6 +32,7 @@ export function createApp(): Application {
 
   app.use('/usuarios', buildUsuariosRouter());
   app.use('/roles', buildRolesRouter());
+  app.use('/elementos', buildElementosRouter());
 
   app.use(errorHandler);
   return app;

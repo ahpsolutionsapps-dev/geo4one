@@ -22,14 +22,14 @@ export default function SignIn() {
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      username: "username",
-      password: "password",
+      email: "",
+      password: "",
     },
   });
 
   const onSubmit = (data: AuthFormValues) => {
     login({
-      username: data.username,
+      email: data.email,
       password: data.password,
     });
   };
@@ -53,16 +53,16 @@ export default function SignIn() {
             <form onSubmit={handleSubmit(onSubmit)} autoComplete="off">
               <div className="space-y-4">
                 <Input
-                  label="Username"
-                  placeholder="Enter Username"
+                  label="Email"
+                  placeholder="Enter your email"
                   prefix={
                     <EnvelopeIcon
                       className="size-5 transition-colors duration-200"
                       strokeWidth="1"
                     />
                   }
-                  {...register("username")}
-                  error={errors?.username?.message}
+                  {...register("email")}
+                  error={errors?.email?.message}
                 />
                 <Input
                   label="Password"

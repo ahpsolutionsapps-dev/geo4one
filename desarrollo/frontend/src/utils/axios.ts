@@ -3,6 +3,8 @@ import { JWT_HOST_API } from "@/configs/auth";
 
 const axiosInstance = axios.create({
   baseURL: JWT_HOST_API,
+  withCredentials: false,
+  timeout: 10000,
 });
 
 axiosInstance.interceptors.response.use(

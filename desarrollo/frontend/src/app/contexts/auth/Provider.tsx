@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (authToken && isTokenValid(authToken)) {
           setSession(authToken);
 
-          const response = await axios.get<{ user: User }>("/user/profile");
+          const response = await axios.get<{ user: User }>('/auth/me');
           const { user } = response.data;
 
           dispatch({
@@ -97,17 +97,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               user,
             },
           });
-        } else {
-          dispatch({
-            type: "INITIALIZE",
-            payload: {
-              isAuthenticated: false,
-              user: null,
-            },
-          });
+          return;
         }
+
+        setSession(null);
+        dispatch({
+          type: "INITIALIZE",
+          payload: {
+            isAuthenticated: false,
+            user: null,
+          },
+        });
       } catch (err) {
         console.error(err);
+        setSession(null);
         dispatch({
           type: "INITIALIZE",
           payload: {
@@ -121,25 +124,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     init();
   }, []);
 
-  const login = async (credentials: { username: string; password: string }) => {
+  const login = async (credentials: { email: string; password: string }) => {
     dispatch({ type: "LOGIN_REQUEST" });
 
     try {
-      const response = await axios.post<{ authToken: string; user: User }>(
-        "/login",
-        credentials,
+      const response = await axios.post<{ token: string; user: User }>(
+        "/auth/login",
+        {
+          email: credentials.email,
+          password: credentials.password,
+        },
       );
-      const { authToken, user } = response.data;
+      const { token, user } = response.data;
 
-      if (
-        typeof authToken !== "string" ||
-        typeof user !== "object" ||
-        user === null
-      ) {
+      if (typeof token !== "string" || typeof user !== "object" || user === null) {
         throw new Error("Response is not valid");
       }
 
-      setSession(authToken);
+      setSession(token);
 
       dispatch({
         type: "LOGIN_SUCCESS",
