@@ -1,9 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import {
+  CatalogoSimpleInput,
+  CatalogoSimpleRecord,
+  CatalogoSimpleUpdateInput,
   CreateElementoInput,
   ElementoRecord,
   ElementoRepository,
   FindElementosFilters,
+  FormatoCatalogoInput,
+  FormatoCatalogoRecord,
+  FormatoCatalogoUpdateInput,
   UpdateElementoInput,
 } from '../../domain/repositories/elemento-repository';
 
@@ -36,6 +42,32 @@ function mapRow(row: any): ElementoRecord {
     fechaActualizacion: row.FechaActualizacion,
     creadoPor: row.CreadoPor ? Number(row.CreadoPor) : null,
     actualizadoPor: row.ActualizadoPor ? Number(row.ActualizadoPor) : null,
+  };
+}
+
+function mapCatalogoSimpleRow(row: any, idKey: string, nameKey: string): CatalogoSimpleRecord {
+  return {
+    id: Number(row[idKey]),
+    nombre: String(row[nameKey]),
+    activo: Boolean(row.Activo),
+    fechaCreacion: row.FechaCreacion,
+    fechaActualizacion: row.FechaActualizacion,
+    creadoPor: row.CreadoPor === null ? null : Number(row.CreadoPor),
+    actualizadoPor: row.ActualizadoPor === null ? null : Number(row.ActualizadoPor),
+  };
+}
+
+function mapFormatoCatalogoRow(row: any): FormatoCatalogoRecord {
+  return {
+    id: Number(row.IdFormato),
+    idTipoElemento: Number(row.IdTipoElemento),
+    tipoElemento: row.TiposElementos.TipoElemento,
+    nombre: row.Formato,
+    activo: Boolean(row.Activo),
+    fechaCreacion: row.FechaCreacion,
+    fechaActualizacion: row.FechaActualizacion,
+    creadoPor: row.CreadoPor === null ? null : Number(row.CreadoPor),
+    actualizadoPor: row.ActualizadoPor === null ? null : Number(row.ActualizadoPor),
   };
 }
 
@@ -287,5 +319,206 @@ export class PrismaElementoRepository implements ElementoRepository {
     });
 
     return mapRow(row);
+  }
+
+  async findTiposElementosCatalogo(): Promise<CatalogoSimpleRecord[]> {
+    const rows = await this.prisma.tiposElementos.findMany({
+      orderBy: { TipoElemento: 'asc' },
+    });
+
+    return rows.map((row) => mapCatalogoSimpleRow(row, 'IdTipoElemento', 'TipoElemento'));
+  }
+
+  async createTipoElementoCatalogo(input: CatalogoSimpleInput): Promise<CatalogoSimpleRecord> {
+    const row = await this.prisma.tiposElementos.create({
+      data: {
+        TipoElemento: input.nombre,
+        Activo: true,
+        CreadoPor: BigInt(input.creadoPor),
+        ActualizadoPor: BigInt(input.creadoPor),
+      },
+    });
+
+    return mapCatalogoSimpleRow(row, 'IdTipoElemento', 'TipoElemento');
+  }
+
+  async updateTipoElementoCatalogo(
+    idTipoElemento: number,
+    input: CatalogoSimpleUpdateInput,
+  ): Promise<CatalogoSimpleRecord> {
+    const row = await this.prisma.tiposElementos.update({
+      where: { IdTipoElemento: BigInt(idTipoElemento) },
+      data: {
+        ...(input.nombre !== undefined ? { TipoElemento: input.nombre } : {}),
+        ...(input.activo !== undefined ? { Activo: input.activo } : {}),
+        ActualizadoPor: BigInt(input.actualizadoPor),
+      },
+    });
+
+    return mapCatalogoSimpleRow(row, 'IdTipoElemento', 'TipoElemento');
+  }
+
+  async deactivateTipoElementoCatalogo(
+    idTipoElemento: number,
+    actualizadoPor: number,
+  ): Promise<void> {
+    await this.prisma.tiposElementos.update({
+      where: { IdTipoElemento: BigInt(idTipoElemento) },
+      data: {
+        Activo: false,
+        ActualizadoPor: BigInt(actualizadoPor),
+      },
+    });
+  }
+
+  async findOrientacionesCatalogo(): Promise<CatalogoSimpleRecord[]> {
+    const rows = await this.prisma.orientaciones.findMany({
+      orderBy: { Orientacion: 'asc' },
+    });
+
+    return rows.map((row) => mapCatalogoSimpleRow(row, 'IdOrientacion', 'Orientacion'));
+  }
+
+  async createOrientacionCatalogo(input: CatalogoSimpleInput): Promise<CatalogoSimpleRecord> {
+    const row = await this.prisma.orientaciones.create({
+      data: {
+        Orientacion: input.nombre,
+        Activo: true,
+        CreadoPor: BigInt(input.creadoPor),
+        ActualizadoPor: BigInt(input.creadoPor),
+      },
+    });
+
+    return mapCatalogoSimpleRow(row, 'IdOrientacion', 'Orientacion');
+  }
+
+  async updateOrientacionCatalogo(
+    idOrientacion: number,
+    input: CatalogoSimpleUpdateInput,
+  ): Promise<CatalogoSimpleRecord> {
+    const row = await this.prisma.orientaciones.update({
+      where: { IdOrientacion: BigInt(idOrientacion) },
+      data: {
+        ...(input.nombre !== undefined ? { Orientacion: input.nombre } : {}),
+        ...(input.activo !== undefined ? { Activo: input.activo } : {}),
+        ActualizadoPor: BigInt(input.actualizadoPor),
+      },
+    });
+
+    return mapCatalogoSimpleRow(row, 'IdOrientacion', 'Orientacion');
+  }
+
+  async deactivateOrientacionCatalogo(
+    idOrientacion: number,
+    actualizadoPor: number,
+  ): Promise<void> {
+    await this.prisma.orientaciones.update({
+      where: { IdOrientacion: BigInt(idOrientacion) },
+      data: {
+        Activo: false,
+        ActualizadoPor: BigInt(actualizadoPor),
+      },
+    });
+  }
+
+  async findDimensionesCatalogo(): Promise<CatalogoSimpleRecord[]> {
+    const rows = await this.prisma.tamanos.findMany({
+      orderBy: { Tamano: 'asc' },
+    });
+
+    return rows.map((row) => mapCatalogoSimpleRow(row, 'IdTamano', 'Tamano'));
+  }
+
+  async createDimensionCatalogo(input: CatalogoSimpleInput): Promise<CatalogoSimpleRecord> {
+    const row = await this.prisma.tamanos.create({
+      data: {
+        Tamano: input.nombre,
+        Activo: true,
+        CreadoPor: BigInt(input.creadoPor),
+        ActualizadoPor: BigInt(input.creadoPor),
+      },
+    });
+
+    return mapCatalogoSimpleRow(row, 'IdTamano', 'Tamano');
+  }
+
+  async updateDimensionCatalogo(
+    idTamano: number,
+    input: CatalogoSimpleUpdateInput,
+  ): Promise<CatalogoSimpleRecord> {
+    const row = await this.prisma.tamanos.update({
+      where: { IdTamano: BigInt(idTamano) },
+      data: {
+        ...(input.nombre !== undefined ? { Tamano: input.nombre } : {}),
+        ...(input.activo !== undefined ? { Activo: input.activo } : {}),
+        ActualizadoPor: BigInt(input.actualizadoPor),
+      },
+    });
+
+    return mapCatalogoSimpleRow(row, 'IdTamano', 'Tamano');
+  }
+
+  async deactivateDimensionCatalogo(idTamano: number, actualizadoPor: number): Promise<void> {
+    await this.prisma.tamanos.update({
+      where: { IdTamano: BigInt(idTamano) },
+      data: {
+        Activo: false,
+        ActualizadoPor: BigInt(actualizadoPor),
+      },
+    });
+  }
+
+  async findFormatosCatalogo(): Promise<FormatoCatalogoRecord[]> {
+    const rows = await this.prisma.formatos.findMany({
+      include: { TiposElementos: { select: { TipoElemento: true } } },
+      orderBy: [{ TiposElementos: { TipoElemento: 'asc' } }, { Formato: 'asc' }],
+    });
+
+    return rows.map(mapFormatoCatalogoRow);
+  }
+
+  async createFormatoCatalogo(input: FormatoCatalogoInput): Promise<FormatoCatalogoRecord> {
+    const row = await this.prisma.formatos.create({
+      data: {
+        IdTipoElemento: BigInt(input.idTipoElemento),
+        Formato: input.formato,
+        Activo: true,
+        CreadoPor: BigInt(input.creadoPor),
+        ActualizadoPor: BigInt(input.creadoPor),
+      },
+      include: { TiposElementos: { select: { TipoElemento: true } } },
+    });
+
+    return mapFormatoCatalogoRow(row);
+  }
+
+  async updateFormatoCatalogo(
+    idFormato: number,
+    input: FormatoCatalogoUpdateInput,
+  ): Promise<FormatoCatalogoRecord> {
+    const row = await this.prisma.formatos.update({
+      where: { IdFormato: BigInt(idFormato) },
+      data: {
+        ...(input.idTipoElemento !== undefined
+          ? { IdTipoElemento: BigInt(input.idTipoElemento) }
+          : {}),
+        ...(input.formato !== undefined ? { Formato: input.formato } : {}),
+        ...(input.activo !== undefined ? { Activo: input.activo } : {}),
+        ActualizadoPor: BigInt(input.actualizadoPor),
+      },
+      include: { TiposElementos: { select: { TipoElemento: true } } },
+    });
+
+    return mapFormatoCatalogoRow(row);
+  }
+
+  async deactivateFormatoCatalogo(idFormato: number, actualizadoPor: number): Promise<void> {
+    await this.prisma.formatos.update({
+      where: { IdFormato: BigInt(idFormato) },
+      data: {
+        Activo: false,
+        ActualizadoPor: BigInt(actualizadoPor),
+      },
+    });
   }
 }

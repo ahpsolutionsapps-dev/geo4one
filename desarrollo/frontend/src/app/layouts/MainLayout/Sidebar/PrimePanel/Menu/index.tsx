@@ -56,9 +56,9 @@ export function Menu({ nav, pathname }: MenuProps) {
           {nav.map((item) => {
             switch (item.type) {
               case "collapse":
-                return <CollapsibleItem key={item.path} data={item} />;
+                return <CollapsibleItem key={item.id} data={item} />;
               case "item":
-                return <MenuItem key={item.path} data={item} />;
+                return <MenuItem key={item.id} data={item} />;
               case "divider":
                 return <Divider key={item.id} />;
               default:

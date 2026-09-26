@@ -1,62 +1,258 @@
-import UbicacionesModulePage from "../components/UbicacionesModulePage";
+import {
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
+import clsx from "clsx";
+import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import {
+  EntityListToolbar,
+  PaginationSection,
+  TableSortIcon,
+} from "@/components/shared/table";
+import { Page } from "@/components/shared/Page";
+import { Card, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
+
+import { createSectoresColumns } from "./components/sectores-table.columns";
+import { SectoresFormModal } from "./components/SectoresFormModal";
+import { useSectores } from "./hooks/use-sectores";
+import { Sector, SectorFormValues } from "./sectores.types";
 
 export default function SectoresPage() {
+  const { sectores, isLoading, errorMessage, saveSector, deleteSector } = useSectores();
+
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "provinciaNombre", desc: false },
+    { id: "municipioNombre", desc: false },
+    { id: "sectorBarrio", desc: false },
+  ]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
+  const [sectorToDelete, setSectorToDelete] = useState<Sector | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const columns = useMemo(
+    () =>
+      createSectoresColumns({
+        onEdit: (item) => {
+          setSelectedSector(item);
+          setFormOpen(true);
+        },
+        onDelete: setSectorToDelete,
+      }),
+    [],
+  );
+
+  const table = useReactTable({
+    data: sectores,
+    columns,
+    state: {
+      sorting,
+    },
+    enableSorting: true,
+    getCoreRowModel: getCoreRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getRowId: (row) => row.id,
+  });
+
+  const handleCreate = () => {
+    setSelectedSector(null);
+    setFormOpen(true);
+  };
+
+  const handleSaved = useCallback(
+    async (values: SectorFormValues) => {
+      await saveSector(selectedSector?.id ?? null, values);
+      toast.success(
+        selectedSector ? "Sector actualizado correctamente" : "Sector creado correctamente",
+      );
+    },
+    [saveSector, selectedSector],
+  );
+
+  const handleDeleteSector = async () => {
+    if (!sectorToDelete) {
+      return;
+    }
+
+    setConfirmLoading(true);
+
+    try {
+      await deleteSector(sectorToDelete.id);
+      toast.success("Sector eliminado correctamente");
+      setSectorToDelete(null);
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
   return (
-    <UbicacionesModulePage
-      title="Sectores"
-      description="Registro de sectores y barrios asociados a un municipio. Este módulo completa el tercer nivel de la jerarquía geográfica."
-      fields={[
-        {
-          name: "IdSectorBarrio",
-          description: "Identificador único del sector o barrio.",
-          required: true,
-        },
-        {
-          name: "IdMunicipio",
-          description: "Municipio al que pertenece el sector.",
-          required: true,
-        },
-        {
-          name: "SectorBarrio",
-          description: "Nombre del sector o barrio.",
-          required: true,
-        },
-        {
-          name: "Circunscripcion",
-          description: "Número o etiqueta de circunscripción.",
-        },
-        {
-          name: "Latitud",
-          description: "Coordenada geográfica de referencia.",
-        },
-        {
-          name: "Longitud",
-          description: "Coordenada geográfica de referencia.",
-        },
-        {
-          name: "Activo",
-          description: "Indica si el sector está habilitado.",
-          required: true,
-        },
-        {
-          name: "FechaCreacion",
-          description: "Fecha de alta del registro.",
-          required: true,
-        },
-        {
-          name: "FechaActualizacion",
-          description: "Última fecha de modificación.",
-          required: true,
-        },
-        {
-          name: "CreadoPor",
-          description: "Usuario que registró el sector.",
-        },
-        {
-          name: "ActualizadoPor",
-          description: "Usuario que actualizó el sector.",
-        },
-      ]}
-    />
+    <Page title="Sectores">
+      <div className="transition-content pt-3 flex h-full min-h-0 w-full flex-col pb-5 supports-[height:1dvh]:min-h-[calc(100dvh-4.5rem)]">
+        {errorMessage && (
+          <div className="mx-(--margin-x) mb-4 rounded-lg border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
+            {errorMessage}
+          </div>
+        )}
+
+        <div className="flex min-h-0 flex-1 flex-col">
+            <EntityListToolbar
+              title="Sectores"
+              createLabel="Nuevo sector"
+              createTitle="Nuevo sector"
+              showSearch={false}
+              table={table}
+              onCreate={handleCreate}
+              actionsPreset="primary"
+              showPrint={false}
+              showExport={false}
+              showShare={false}
+              showSaveView={false}
+              marginClassName="mx-2 sm:mx-3 md:mx-4"
+            />
+
+            <div className="transition-content flex min-h-0 flex-1 flex-col px-2 pt-3 sm:px-3 md:px-4">
+              <Card className="relative flex min-h-0 flex-1 flex-col">
+                <div className="table-wrapper min-h-0 min-w-full flex-1 overflow-x-auto">
+                  <Table className="w-full text-left rtl:text-right">
+                    <THead>
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <Tr key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => (
+                            <Th
+                              key={header.id}
+                              className={clsx(
+                                "dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold text-gray-800 uppercase first:ltr:rounded-tl-lg last:ltr:rounded-tr-lg",
+                              )}
+                            >
+                              {header.column.getCanSort() ? (
+                                <div
+                                  className="flex cursor-pointer items-center space-x-3 select-none"
+                                  onClick={header.column.getToggleSortingHandler()}
+                                >
+                                  <span className="flex-1">
+                                    {header.isPlaceholder
+                                      ? null
+                                      : flexRender(
+                                          header.column.columnDef.header,
+                                          header.getContext(),
+                                        )}
+                                  </span>
+                                  <TableSortIcon sorted={header.column.getIsSorted()} />
+                                </div>
+                              ) : header.isPlaceholder ? null : (
+                                flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )
+                              )}
+                            </Th>
+                          ))}
+                        </Tr>
+                      ))}
+                    </THead>
+
+                    <TBody>
+                      {isLoading ? (
+                        <Tr>
+                          <Td
+                            colSpan={table.getVisibleLeafColumns().length}
+                            className="py-16 text-center"
+                          >
+                            <div className="flex justify-center">
+                              <span className="text-sm text-gray-500 dark:text-dark-300">
+                                Cargando sectores...
+                              </span>
+                            </div>
+                          </Td>
+                        </Tr>
+                      ) : table.getRowModel().rows.length === 0 ? (
+                        <Tr>
+                          <Td
+                            colSpan={table.getVisibleLeafColumns().length}
+                            className="py-16 text-center text-sm text-gray-500 dark:text-dark-300"
+                          >
+                            No se encontraron sectores
+                          </Td>
+                        </Tr>
+                      ) : (
+                        table.getRowModel().rows.map((row) => (
+                          <Tr
+                            key={row.id}
+                            className="dark:border-b-dark-500 relative border-y border-transparent border-b-gray-200"
+                          >
+                            {row.getVisibleCells().map((cell) => (
+                              <Td
+                                key={cell.id}
+                                className="relative bg-white dark:bg-dark-900"
+                              >
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext(),
+                                )}
+                              </Td>
+                            ))}
+                          </Tr>
+                        ))
+                      )}
+                    </TBody>
+                  </Table>
+                </div>
+
+                {!isLoading && table.getCoreRowModel().rows.length > 0 && (
+                  <div className="px-4 pb-4 pt-4 sm:px-5">
+                    <PaginationSection table={table} />
+                  </div>
+                )}
+              </Card>
+            </div>
+        </div>
+      </div>
+
+      <SectoresFormModal
+        open={formOpen}
+        sector={selectedSector}
+        onClose={() => {
+          setFormOpen(false);
+          setSelectedSector(null);
+        }}
+        onSaved={handleSaved}
+      />
+
+      <ConfirmModal
+        show={Boolean(sectorToDelete)}
+        onClose={() => setSectorToDelete(null)}
+        onOk={handleDeleteSector}
+        state="pending"
+        confirmLoading={confirmLoading}
+        messages={{
+          pending: {
+            title: "Eliminar sector",
+            description: sectorToDelete
+              ? `¿Deseas eliminar el sector \"${sectorToDelete.sectorBarrio}\"?`
+              : "",
+            actionText: "Eliminar",
+          },
+          success: {
+            title: "Sector eliminado",
+            description: "El sector fue eliminado correctamente.",
+            actionText: "Cerrar",
+          },
+          error: {
+            title: "No se pudo eliminar",
+            description: "Intenta nuevamente.",
+            actionText: "Reintentar",
+          },
+        }}
+      />
+    </Page>
   );
 }

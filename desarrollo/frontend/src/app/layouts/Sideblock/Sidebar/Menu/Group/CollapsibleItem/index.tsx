@@ -74,7 +74,7 @@ export function CollapsibleItem({ data }: { data: NavigationTree }) {
           </AccordionButton>
           <AccordionPanel className="flex flex-col space-y-1 px-3 py-1.5">
             {childs.map((child) => (
-              <MenuItem key={child.id} data={child} />
+              <MenuItem key={`${child.id}-${child.path ?? "route"}`} data={child} />
             ))}
           </AccordionPanel>
         </>

@@ -1,13 +1,46 @@
-import { Dialog, DialogPanel, Tab, TabGroup, TabList, Transition, TransitionChild } from '@headlessui/react';
+import {
+  Dialog,
+  DialogPanel,
+  Tab,
+  TabGroup,
+  TabList,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 import {
   DocumentPlusIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
   XMarkIcon,
-} from '@heroicons/react/24/outline';
-import { Fragment, useState } from 'react';
-import { Page } from '@/components/shared/Page';
+} from "@heroicons/react/24/outline";
+import {
+  flexRender,
+  getCoreRowModel,
+  getFacetedMinMaxValues,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
+import clsx from "clsx";
+import { Fragment, useCallback, useMemo, useRef, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
+
+import { useThemeContext } from "@/app/contexts/theme/context";
+import { Page } from "@/components/shared/Page";
+import {
+  EntityListToolbar,
+  PaginationSection,
+  SelectedRowsActions,
+  SelectCell,
+  SelectHeader,
+  TableSortIcon,
+  usePersistedTableState,
+} from "@/components/shared/table";
 import {
   Badge,
   Button,
@@ -15,6 +48,7 @@ import {
   Input,
   Radio,
   Select,
+  Spinner,
   Table,
   TBody,
   Td,
@@ -22,258 +56,542 @@ import {
   Th,
   THead,
   Tr,
-} from '@/components/ui';
+} from "@/components/ui";
+import { useDidUpdate, useLockScrollbar } from "@/hooks";
+import { getUserAgentBrowser } from "@/utils/dom/getUserAgentBrowser";
+import { fuzzyFilter } from "@/utils/react-table/fuzzyFilter";
 
-import { useElementos } from '../application/use-elementos';
-import type { Elemento } from '../domain/types';
+import { useElementos } from "../application/use-elementos";
+import type { Elemento } from "../domain/types";
 
 const fallbackRows: Elemento[] = [
   {
-    id: 'ELM-0001',
-    elemento: 'Valla Winston Churchill',
-    tipo: 'Estático',
-    formato: 'Media Group SRL',
-    tamaño: '14 x 48',
-    proveedor: 'Valla Estilo',
-    ubicacion: 'Santo Domingo',
-    licencia: 'LIC-2025-001',
-    costo: '15,000.00',
-    status: 'Activo',
+    id: "ELM-0001",
+    elemento: "Valla Winston Churchill",
+    tipo: "Estático",
+    formato: "Valla",
+    tamaño: "14 x 48",
+    proveedor: "Valla Estilo",
+    ubicacion: "Santo Domingo",
+    licencia: "LIC-2025-001",
+    costo: "15,000.00",
+    status: "Activo",
     imagen:
-      'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80',
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80",
   },
   {
-    id: 'ELM-0002',
-    elemento: 'Pantalla Ágora Mall',
-    tipo: 'Digital',
-    formato: 'Vision Publicidad',
-    tamaño: '8 x 14',
-    proveedor: 'Pantalla LED',
-    ubicacion: 'Santo Domingo',
-    licencia: 'LIC-2025-002',
-    costo: '25,000.00',
-    status: 'Activo',
+    id: "ELM-0002",
+    elemento: "Pantalla Ágora Mall",
+    tipo: "Digital",
+    formato: "Pantalla",
+    tamaño: "8 x 14",
+    proveedor: "Pantalla LED",
+    ubicacion: "Santo Domingo",
+    licencia: "LIC-2025-002",
+    costo: "25,000.00",
+    status: "Activo",
     imagen:
-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80',
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80",
   },
   {
-    id: 'ELM-0003',
-    elemento: 'Mupi Blue Mall',
-    tipo: 'Estático',
-    formato: 'Outdoor Caribe',
-    tamaño: '4 x 6',
-    proveedor: 'Mupi',
-    ubicacion: 'Santo Domingo',
-    licencia: 'LIC-2025-003',
-    costo: '8,500.00',
-    status: 'Activo',
+    id: "ELM-0003",
+    elemento: "Mupi Blue Mall",
+    tipo: "Estático",
+    formato: "Mupi",
+    tamaño: "4 x 6",
+    proveedor: "Mupi",
+    ubicacion: "Santo Domingo",
+    licencia: "LIC-2025-003",
+    costo: "8,500.00",
+    status: "Activo",
     imagen:
-      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
   },
   {
-    id: 'ELM-0004',
-    elemento: 'Valla 27 de Febrero',
-    tipo: 'Estático',
-    formato: 'Media Group SRL',
-    tamaño: '12 x 36',
-    proveedor: 'Valla Estilo',
-    ubicacion: 'Santo Domingo',
-    licencia: 'LIC-2024-015',
-    costo: '12,000.00',
-    status: 'Inactivo',
+    id: "ELM-0004",
+    elemento: "Valla 27 de Febrero",
+    tipo: "Estático",
+    formato: "Valla",
+    tamaño: "12 x 36",
+    proveedor: "Valla Estilo",
+    ubicacion: "Santo Domingo",
+    licencia: "LIC-2024-015",
+    costo: "12,000.00",
+    status: "Inactivo",
     imagen:
-      'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=800&q=80',
+      "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=800&q=80",
   },
 ];
 
 const statusColors = {
-  Activo: 'success',
-  Inactivo: 'error',
-  Anulado: 'neutral',
+  Activo: "success",
+  Inactivo: "error",
+  Anulado: "neutral",
 } as const;
+
+const isSafari = getUserAgentBrowser() === "Safari";
 
 export default function ElementosPage() {
   const { items, loading, error } = useElementos();
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const rows = items.length > 0 ? items : fallbackRows;
+  const { cardSkin } = useThemeContext();
+
+  const rows = useMemo(() => (items.length > 0 ? items : fallbackRows), [items]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedElemento, setSelectedElemento] = useState<Elemento | null>(null);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [rowSelection, setRowSelection] = useState({});
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const viewButtonRef = useRef<HTMLButtonElement>(null);
+
+  const {
+    columnVisibility,
+    setColumnVisibility,
+    columnPinning,
+    setColumnPinning,
+    tableSettings,
+    setTableSettings,
+    pagination,
+    onPaginationChange,
+  } = usePersistedTableState({
+    columnVisibilityKey: "column-visibility-elementos",
+    columnPinningKey: "column-pinning-elementos",
+    tableSettingsKey: "table-settings-elementos",
+    paginationKey: "table-pagination-elementos",
+  });
+
+  const openCreateForm = () => {
+    setSelectedElemento(null);
+    setFormOpen(true);
+  };
+
+  useHotkeys(
+    "mod+n",
+    (event) => {
+      event.preventDefault();
+      if (formOpen) {
+        return;
+      }
+      openCreateForm();
+    },
+    {
+      enableOnFormTags: true,
+      preventDefault: true,
+    },
+    [formOpen],
+  );
+
+  useHotkeys(
+    "mod+b",
+    (event) => {
+      event.preventDefault();
+      if (formOpen) {
+        return;
+      }
+
+      const input = searchInputRef.current;
+      if (!input) {
+        return;
+      }
+
+      input.focus();
+      input.select();
+    },
+    {
+      enableOnFormTags: true,
+      preventDefault: true,
+    },
+    [formOpen],
+  );
+
+  useHotkeys(
+    "mod+v",
+    (event) => {
+      if (formOpen) {
+        return;
+      }
+
+      event.preventDefault();
+      viewButtonRef.current?.click();
+    },
+    {
+      enableOnFormTags: false,
+      preventDefault: true,
+    },
+    [formOpen],
+  );
+
+  const columns = useMemo(
+    () => [
+      {
+        id: "select",
+        header: SelectHeader,
+        cell: SelectCell,
+      },
+      {
+        accessorKey: "id",
+        id: "id",
+        header: "ID",
+        cell: ({ row }: { row: { original: Elemento } }) => row.original.id ?? "—",
+      },
+      {
+        accessorKey: "elemento",
+        header: "Elemento",
+        cell: ({ row }: { row: { original: Elemento } }) => (
+          <div className="flex items-center gap-3">
+            <img
+              src={row.original.imagen ?? fallbackRows[0].imagen}
+              alt={row.original.elemento ?? "Elemento"}
+              className="h-10 w-10 rounded-md object-cover"
+            />
+            <span className="font-medium text-gray-800 dark:text-dark-100">
+              {row.original.elemento ?? "Sin nombre"}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "tipo",
+        header: "Tipo",
+      },
+      {
+        accessorKey: "formato",
+        header: "Formato",
+      },
+      {
+        accessorKey: "tamaño",
+        header: "Tamaño",
+      },
+      {
+        accessorKey: "proveedor",
+        header: "Proveedor",
+      },
+      {
+        accessorKey: "ubicacion",
+        header: "Ubicación",
+      },
+      {
+        accessorKey: "licencia",
+        header: "Licencia",
+      },
+      {
+        accessorKey: "costo",
+        header: "Costo",
+      },
+      {
+        accessorKey: "status",
+        header: "Estatus",
+        cell: ({ row }: { row: { original: Elemento } }) => (
+          <Badge
+            variant="soft"
+            color={
+              statusColors[
+                (row.original.status as keyof typeof statusColors) ?? "Anulado"
+              ] ?? "neutral"
+            }
+          >
+            {row.original.status ?? "Sin estado"}
+          </Badge>
+        ),
+      },
+      {
+        id: "acciones",
+        header: "Acciones",
+        cell: ({ row }: { row: { original: Elemento } }) => (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="flat"
+              isIcon
+              className="size-7 rounded-full"
+              aria-label="Ver elemento"
+              title="Ver elemento"
+            >
+              <EyeIcon className="size-4.5" />
+            </Button>
+            <Button
+              variant="flat"
+              isIcon
+              className="size-7 rounded-full"
+              aria-label="Editar elemento"
+              title="Editar elemento"
+              onClick={() => {
+                setSelectedElemento(row.original);
+                setFormOpen(true);
+              }}
+            >
+              <PencilIcon className="size-4.5" />
+            </Button>
+            <Button
+              variant="flat"
+              isIcon
+              className="size-7 rounded-full"
+              aria-label="Eliminar elemento"
+              title="Eliminar elemento"
+              onClick={() => {
+                toast.success(`Elemento "${row.original.elemento ?? "sin nombre"}" listo para eliminar.`);
+              }}
+            >
+              <TrashIcon className="size-4.5" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: {
+      globalFilter,
+      sorting,
+      columnVisibility,
+      columnPinning,
+      rowSelection,
+      tableSettings,
+      pagination,
+    },
+    meta: {
+      setTableSettings,
+      deleteRows: async (selectedRows) => {
+        const count = selectedRows.length;
+        if (!count) {
+          return;
+        }
+
+        toast.success(`${count} elemento(s) eliminados`);
+      },
+    },
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
+    enableSorting: tableSettings.enableSorting,
+    enableColumnFilters: tableSettings.enableColumnFilters,
+    enableRowSelection: () => true,
+    getCoreRowModel: getCoreRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    getFilteredRowModel: getFilteredRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
+    globalFilterFn: fuzzyFilter,
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnPinningChange: setColumnPinning,
+    onRowSelectionChange: setRowSelection,
+    onPaginationChange,
+    getRowId: (row) => String(row.id ?? `${row.elemento ?? "row"}-${row.licencia ?? "no-lic"}`),
+  });
+
+  useDidUpdate(() => table.resetRowSelection(), [rows]);
+  useLockScrollbar(tableSettings.enableFullScreen);
+
+  const closeForm = () => {
+    setFormOpen(false);
+    setSelectedElemento(null);
+  };
+
+  const handleSaved = useCallback(() => {
+    setFormOpen(false);
+    setSelectedElemento(null);
+    toast.success(
+      selectedElemento ? "Elemento actualizado correctamente" : "Elemento creado correctamente",
+    );
+  }, [selectedElemento]);
 
   return (
     <Page title="Elementos">
-      <div className="transition-content w-full px-(--margin-x) pb-8">
-        <div className="flex items-center space-x-4 py-5 lg:py-6">
-          <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-primary-500">
-              Inventario / Publicidad
-            </p>
-            <h2 className="truncate text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50 lg:text-2xl">
-              Elementos
-            </h2>
-          </div>
-        </div>
-
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="text-sm text-gray-500 dark:text-dark-300">
-            Total de registros del inventario
-          </div>
-
-          <Button
-            color="primary"
-            className="w-full sm:w-auto"
-            onClick={() => setShowCreateModal(true)}
-          >
-            + Nuevo elemento
-          </Button>
-        </div>
-
+      <div className="transition-content pt-3 flex h-full min-h-0 w-full flex-col pb-5 supports-[height:1dvh]:min-h-[calc(100dvh-4.5rem)]">
         {error ? (
-          <Card className="mb-6 border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="mx-(--margin-x) mb-4 rounded-lg border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
             {error}
-          </Card>
+          </div>
         ) : null}
 
-        <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            { label: 'Total', value: '248', hint: '+12% vs mes anterior', tone: 'primary' },
-            { label: 'Activos', value: '192', hint: '78% del inventario', tone: 'success' },
-            { label: 'Inactivos', value: '38', hint: 'Revisión requerida', tone: 'error' },
-            { label: 'Anulados', value: '18', hint: 'Últimos 30 días', tone: 'neutral' },
-          ].map((stat) => (
-            <Card key={stat.label} className="p-4 shadow-sm ring-1 ring-gray-200/70 dark:ring-dark-500">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-dark-300">{stat.label}</p>
-                  <p className="mt-2 text-3xl font-semibold text-gray-900 dark:text-dark-50">
-                    {stat.value}
-                  </p>
-                </div>
-                <Badge color={stat.tone as any} variant="soft" className="rounded-full px-2.5 py-1">
-                  {stat.hint}
-                </Badge>
+        <div
+          className={clsx(
+            "flex min-h-0 flex-1 flex-col",
+            tableSettings.enableFullScreen &&
+              "dark:bg-dark-900 fixed inset-0 z-61 h-full bg-white pt-3",
+          )}
+        >
+          <EntityListToolbar
+            title="Elementos"
+            createLabel="Nuevo elemento"
+            createTitle="Nuevo elemento (Ctrl+N)"
+            searchPlaceholder="Buscar ID, elemento, licencia, proveedor..."
+            searchInputRef={searchInputRef}
+            table={table}
+            onCreate={openCreateForm}
+            actionsPreset="primary"
+            marginClassName="mx-2 sm:mx-3 md:mx-4"
+            showPrint={false}
+            showExport={false}
+            showShare={false}
+            showSaveView={false}
+          />
+
+          <div
+            className={clsx(
+              "transition-content flex min-h-0 flex-1 flex-col pt-3",
+              tableSettings.enableFullScreen ? "overflow-hidden" : "px-2 sm:px-3 md:px-4",
+            )}
+          >
+            <Card
+              className={clsx(
+                "relative flex min-h-0 flex-1 flex-col",
+                tableSettings.enableFullScreen && "overflow-hidden",
+              )}
+            >
+              <div className="table-wrapper min-h-0 min-w-full flex-1 overflow-x-auto">
+                <Table
+                  hoverable
+                  zebra
+                  dense={tableSettings.enableRowDense}
+                  sticky={tableSettings.enableFullScreen}
+                  className="w-full text-left rtl:text-right"
+                >
+                  <THead>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <Tr key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <Th
+                            key={header.id}
+                            className={clsx(
+                              "dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold text-gray-800 uppercase first:ltr:rounded-tl-lg last:ltr:rounded-tr-lg first:rtl:rounded-tr-lg last:rtl:rounded-tl-lg",
+                              header.column.getCanPin() && [
+                                header.column.getIsPinned() === "left" &&
+                                  "sticky z-2 ltr:left-0 rtl:right-0",
+                                header.column.getIsPinned() === "right" &&
+                                  "sticky z-2 ltr:right-0 rtl:left-0",
+                              ],
+                            )}
+                          >
+                            {header.column.getCanSort() ? (
+                              <div
+                                className="flex cursor-pointer items-center space-x-3 select-none"
+                                onClick={header.column.getToggleSortingHandler()}
+                              >
+                                <span className="flex-1">
+                                  {header.isPlaceholder
+                                    ? null
+                                    : flexRender(
+                                        header.column.columnDef.header,
+                                        header.getContext(),
+                                      )}
+                                </span>
+                                <TableSortIcon sorted={header.column.getIsSorted()} />
+                              </div>
+                            ) : header.isPlaceholder ? null : (
+                              flexRender(header.column.columnDef.header, header.getContext())
+                            )}
+                          </Th>
+                        ))}
+                      </Tr>
+                    ))}
+                  </THead>
+
+                  <TBody>
+                    {loading ? (
+                      <Tr>
+                        <Td
+                          colSpan={table.getVisibleLeafColumns().length}
+                          className="py-16 text-center"
+                        >
+                          <Spinner color="primary" />
+                        </Td>
+                      </Tr>
+                    ) : table.getRowModel().rows.length === 0 ? (
+                      <Tr>
+                        <Td
+                          colSpan={table.getVisibleLeafColumns().length}
+                          className="py-16 text-center text-sm text-gray-500 dark:text-dark-300"
+                        >
+                          No se encontraron elementos
+                        </Td>
+                      </Tr>
+                    ) : (
+                      table.getRowModel().rows.map((row) => (
+                        <Tr
+                          key={row.id}
+                          className={clsx(
+                            "dark:border-b-dark-500 relative border-y border-transparent border-b-gray-200",
+                            row.getIsSelected() &&
+                              !isSafari &&
+                              "row-selected after:bg-primary-500/10 ltr:after:border-l-primary-500 rtl:after:border-r-primary-500 after:pointer-events-none after:absolute after:inset-0 after:z-2 after:h-full after:w-full after:border-3 after:border-transparent",
+                          )}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <Td
+                              key={cell.id}
+                              className={clsx(
+                                "relative bg-white",
+                                cardSkin === "shadow"
+                                  ? "dark:bg-dark-700"
+                                  : "dark:bg-dark-900",
+                                cell.column.getCanPin() && [
+                                  cell.column.getIsPinned() === "left" &&
+                                    "sticky z-2 ltr:left-0 rtl:right-0",
+                                  cell.column.getIsPinned() === "right" &&
+                                    "sticky z-2 ltr:right-0 rtl:left-0",
+                                ],
+                              )}
+                            >
+                              {cell.column.getIsPinned() && (
+                                <div
+                                  className={clsx(
+                                    "dark:border-dark-500 pointer-events-none absolute inset-0 border-gray-200",
+                                    cell.column.getIsPinned() === "left"
+                                      ? "ltr:border-r rtl:border-l"
+                                      : "ltr:border-l rtl:border-r",
+                                  )}
+                                />
+                              )}
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </Td>
+                          ))}
+                        </Tr>
+                      ))
+                    )}
+                  </TBody>
+                </Table>
               </div>
+
+              <SelectedRowsActions table={table} />
+
+              {!loading && table.getCoreRowModel().rows.length > 0 && (
+                <div
+                  className={clsx(
+                    "px-4 pb-4 sm:px-5 sm:pt-4",
+                    tableSettings.enableFullScreen && "dark:bg-dark-800 bg-gray-50",
+                    !(table.getIsSomeRowsSelected() || table.getIsAllRowsSelected()) && "pt-4",
+                  )}
+                >
+                  <PaginationSection table={table} />
+                </div>
+              )}
             </Card>
-          ))}
+          </div>
         </div>
-
-        <Card className="mt-3 p-4 sm:p-5">
-          <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-1 flex-col gap-3 sm:flex-row">
-              <input
-                className="h-10 min-w-0 flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm outline-none transition focus:border-primary-500 focus:bg-white dark:border-dark-500 dark:bg-dark-700 dark:text-dark-50"
-                placeholder="Buscar por nombre, licencia o ID..."
-              />
-              <select className="h-10 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm outline-none dark:border-dark-500 dark:bg-dark-700 dark:text-dark-50">
-                <option>Proveedor</option>
-              </select>
-              <select className="h-10 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm outline-none dark:border-dark-500 dark:bg-dark-700 dark:text-dark-50">
-                <option>Tipo</option>
-              </select>
-            </div>
-
-            <div className="flex gap-2">
-              <Button variant="outlined">Limpiar</Button>
-              <Button color="primary">Buscar</Button>
-            </div>
-          </div>
-
-          <div className="min-w-full overflow-x-auto">
-            <Table className="w-full text-left rtl:text-right" hoverable zebra>
-              <THead>
-                <Tr>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 w-10 bg-gray-200 font-semibold uppercase text-gray-800 first:ltr:rounded-tl-lg last:ltr:rounded-tr-lg first:rtl:rounded-tr-lg last:rtl:rounded-tl-lg"> </Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">ID</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Elemento</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Tipo</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Formato</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Tamaño</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Proveedor</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Ubicación</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Licencia</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Costo</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Estatus</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Imagen</Th>
-                  <Th className="dark:bg-dark-800 dark:text-dark-100 bg-gray-200 font-semibold uppercase text-gray-800">Acciones</Th>
-                </Tr>
-              </THead>
-              <TBody>
-                {loading ? (
-                  <Tr>
-                    <Td colSpan={13} className="py-8 text-center text-gray-500">
-                      Cargando elementos...
-                    </Td>
-                  </Tr>
-                ) : (
-                  rows.map((row, index) => (
-                    <Tr key={row.id ?? row.idElemento ?? `${row.licencia}-${index}`} className="border-y border-transparent border-b-gray-200 last:border-none dark:border-b-dark-500">
-                      <Td>
-                        <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
-                      </Td>
-                      <Td>{row.id ?? row.idElemento ?? '—'}</Td>
-                      <Td>
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={row.imagen ?? fallbackRows[0].imagen}
-                            alt={row.elemento ?? 'Elemento'}
-                            className="h-10 w-10 rounded-md object-cover"
-                          />
-                          <span className="font-medium text-gray-800 dark:text-dark-100">
-                            {row.elemento ?? 'Sin nombre'}
-                          </span>
-                        </div>
-                      </Td>
-                      <Td>{row.tipo ?? '—'}</Td>
-                      <Td>{row.formato ?? '—'}</Td>
-                      <Td>{row.tamaño ?? '—'}</Td>
-                      <Td>{row.proveedor ?? '—'}</Td>
-                      <Td>{row.ubicacion ?? '—'}</Td>
-                      <Td>{row.licencia ?? '—'}</Td>
-                      <Td>{row.costo ?? '—'}</Td>
-                      <Td>
-                        <Badge variant="soft" color={statusColors[(row.status as keyof typeof statusColors) ?? 'Anulado'] as any}>
-                          {row.status ?? 'Sin estado'}
-                        </Badge>
-                      </Td>
-                      <Td>
-                        <img
-                          src={row.imagen ?? fallbackRows[0].imagen}
-                          alt={row.elemento ?? 'Elemento'}
-                          className="h-12 w-16 rounded-md object-cover"
-                        />
-                      </Td>
-                      <Td>
-                        <div className="flex items-center gap-2">
-                          <Button variant="flat" isIcon className="size-7 rounded-full" aria-label="Ver elemento">
-                            <EyeIcon className="size-4.5" />
-                          </Button>
-                          <Button variant="flat" isIcon className="size-7 rounded-full" aria-label="Editar elemento">
-                            <PencilIcon className="size-4.5" />
-                          </Button>
-                          <Button variant="flat" isIcon className="size-7 rounded-full" aria-label="Eliminar elemento">
-                            <TrashIcon className="size-4.5" />
-                          </Button>
-                        </div>
-                      </Td>
-                    </Tr>
-                  ))
-                )}
-              </TBody>
-            </Table>
-          </div>
-        </Card>
-
-        <ElementoFormModal
-          show={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-        />
       </div>
+
+      <ElementoFormModal
+        show={formOpen}
+        onClose={closeForm}
+        elemento={selectedElemento}
+        onSaved={handleSaved}
+      />
     </Page>
   );
 }
 
 const modalTabs = [
-  'Información General',
-  'Ubicación',
-  'Licencia y Costos',
-  'Archivos y Observaciones',
+  "Información General",
+  "Ubicación",
+  "Licencia y Costos",
+  "Archivos y Observaciones",
 ];
 
 function RequiredLabel({ text }: { text: string }) {
@@ -284,7 +602,17 @@ function RequiredLabel({ text }: { text: string }) {
   );
 }
 
-function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => void }) {
+function ElementoFormModal({
+  show,
+  elemento,
+  onClose,
+  onSaved,
+}: {
+  show: boolean;
+  elemento?: Elemento | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   return (
     <Transition show={show} as={Fragment}>
       <Dialog
@@ -321,10 +649,12 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                 </div>
                 <div>
                   <h3 className="text-2xl font-semibold text-gray-800 dark:text-dark-100">
-                    Crear Nuevo Elemento
+                    {elemento ? "Editar elemento" : "Crear nuevo elemento"}
                   </h3>
                   <p className="mt-1 text-sm text-gray-500 dark:text-dark-300">
-                    Complete la información para registrar un nuevo elemento publicitario.
+                    {elemento
+                      ? "Actualiza la información del registro seleccionado."
+                      : "Complete la información para registrar un nuevo elemento publicitario."}
                   </p>
                 </div>
               </div>
@@ -356,12 +686,14 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
 
               <div className="space-y-5 pt-5">
                 <section className="space-y-3">
-                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">Proveedor</h4>
+                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">
+                    Proveedor
+                  </h4>
                   <div className="grid gap-3 md:grid-cols-12">
                     <Select
-                      classNames={{ root: 'md:col-span-8' }}
+                      classNames={{ root: "md:col-span-8" }}
                       label={<RequiredLabel text="Suplidor / Proveedor" />}
-                      defaultValue=""
+                      defaultValue={elemento?.proveedor ?? ""}
                     >
                       <option value="" disabled>
                         Seleccione un suplidor
@@ -372,8 +704,9 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                     </Select>
 
                     <Input
-                      classNames={{ root: 'md:col-span-4' }}
+                      classNames={{ root: "md:col-span-4" }}
                       label="ID-Suplidor"
+                      value={elemento?.id ?? ""}
                       placeholder="Se generará automáticamente"
                       readOnly
                       disabled
@@ -382,12 +715,14 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                 </section>
 
                 <section className="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-500">
-                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">Datos del Elemento</h4>
+                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">
+                    Datos del Elemento
+                  </h4>
                   <div className="grid gap-3 md:grid-cols-12">
                     <Select
-                      classNames={{ root: 'md:col-span-4' }}
+                      classNames={{ root: "md:col-span-4" }}
                       label={<RequiredLabel text="Tipo de Elemento" />}
-                      defaultValue=""
+                      defaultValue={elemento?.tipo ?? ""}
                     >
                       <option value="" disabled>
                         Seleccione un tipo
@@ -398,9 +733,9 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                     </Select>
 
                     <Select
-                      classNames={{ root: 'md:col-span-4' }}
+                      classNames={{ root: "md:col-span-4" }}
                       label={<RequiredLabel text="Formato" />}
-                      defaultValue=""
+                      defaultValue={elemento?.formato ?? ""}
                     >
                       <option value="" disabled>
                         Seleccione un formato
@@ -411,9 +746,9 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                     </Select>
 
                     <Select
-                      classNames={{ root: 'md:col-span-4' }}
+                      classNames={{ root: "md:col-span-4" }}
                       label={<RequiredLabel text="Tamaño" />}
-                      defaultValue=""
+                      defaultValue={elemento?.tamaño ?? ""}
                     >
                       <option value="" disabled>
                         Seleccione un tamaño
@@ -424,7 +759,7 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                     </Select>
 
                     <Select
-                      classNames={{ root: 'md:col-span-5' }}
+                      classNames={{ root: "md:col-span-5" }}
                       label="Orientación"
                       defaultValue=""
                     >
@@ -452,23 +787,27 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                 </section>
 
                 <section className="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-500">
-                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">Información Básica</h4>
+                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">
+                    Información Básica
+                  </h4>
                   <div className="grid gap-3 md:grid-cols-12">
                     <Input
-                      classNames={{ root: 'md:col-span-8' }}
+                      classNames={{ root: "md:col-span-8" }}
                       label={<RequiredLabel text="Nombre / Referencia del Elemento" />}
+                      defaultValue={elemento?.elemento ?? ""}
                       placeholder="Ej. ELM-0011"
                     />
 
                     <Input
-                      classNames={{ root: 'md:col-span-4' }}
+                      classNames={{ root: "md:col-span-4" }}
                       label="ID-Seguimiento"
                       placeholder="Ej. SEG-2025-001"
                     />
 
                     <Textarea
-                      classNames={{ root: 'md:col-span-12' }}
+                      classNames={{ root: "md:col-span-12" }}
                       label={<RequiredLabel text="Dirección" />}
+                      defaultValue={elemento?.ubicacion ?? ""}
                       rows={2}
                       placeholder="Ingrese la dirección exacta del elemento"
                     />
@@ -476,10 +815,12 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                 </section>
 
                 <section className="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-500">
-                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">Ubicación</h4>
+                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">
+                    Ubicación
+                  </h4>
                   <div className="grid gap-3 md:grid-cols-12">
                     <Select
-                      classNames={{ root: 'md:col-span-4' }}
+                      classNames={{ root: "md:col-span-4" }}
                       label={<RequiredLabel text="Provincia" />}
                       defaultValue=""
                     >
@@ -491,7 +832,7 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                     </Select>
 
                     <Select
-                      classNames={{ root: 'md:col-span-4' }}
+                      classNames={{ root: "md:col-span-4" }}
                       label={<RequiredLabel text="Municipio" />}
                       defaultValue=""
                     >
@@ -503,7 +844,7 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                     </Select>
 
                     <Select
-                      classNames={{ root: 'md:col-span-4' }}
+                      classNames={{ root: "md:col-span-4" }}
                       label={<RequiredLabel text="Sector / Barrio" />}
                       defaultValue=""
                     >
@@ -515,19 +856,19 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                     </Select>
 
                     <Input
-                      classNames={{ root: 'md:col-span-5' }}
+                      classNames={{ root: "md:col-span-5" }}
                       label="Circunscripción"
                       placeholder="Ingrese la circunscripción"
                     />
 
                     <Input
-                      classNames={{ root: 'md:col-span-3.5' }}
+                      classNames={{ root: "md:col-span-3.5" }}
                       label="Latitud"
                       placeholder="Ej. 18.4861"
                     />
 
                     <Input
-                      classNames={{ root: 'md:col-span-3.5' }}
+                      classNames={{ root: "md:col-span-3.5" }}
                       label="Longitud"
                       placeholder="Ej. -69.9312"
                     />
@@ -539,8 +880,14 @@ function ElementoFormModal({ show, onClose }: { show: boolean; onClose: () => vo
                 <Button variant="outlined" className="min-w-[9rem]" onClick={onClose}>
                   Cancelar
                 </Button>
-                <Button color="primary" className="min-w-[12rem]">
-                  Guardar Elemento
+                <Button
+                  color="primary"
+                  className="min-w-[12rem]"
+                  onClick={() => {
+                    onSaved();
+                  }}
+                >
+                  {elemento ? "Guardar cambios" : "Guardar elemento"}
                 </Button>
               </div>
             </div>

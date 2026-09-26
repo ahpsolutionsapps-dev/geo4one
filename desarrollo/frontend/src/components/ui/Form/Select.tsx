@@ -7,6 +7,7 @@ import {
   RefObject,
   HTMLAttributes,
   ComponentPropsWithoutRef,
+  Ref,
 } from "react";
 import clsx from "clsx";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
@@ -46,7 +47,7 @@ type SelectProps = {
   rootProps?: HTMLAttributes<HTMLDivElement>;
   labelProps?: HTMLAttributes<HTMLLabelElement>;
   data?: (SelectOption | string | number)[];
-  ref?: RefObject<HTMLSelectElement>;
+  ref?: Ref<HTMLSelectElement>;
   multiple?: boolean;
 } & Omit<ComponentPropsWithoutRef<"select">, "prefix">;
 
@@ -180,7 +181,18 @@ const Select = ({
             classNames.select,
           )}
           id={inputId}
-          ref={ref || selectRef}
+          ref={(node) => {
+            selectRef.current = node;
+
+            if (typeof ref === "function") {
+              ref(node);
+              return;
+            }
+
+            if (ref) {
+              (ref as RefObject<HTMLSelectElement | null>).current = node;
+            }
+          }}
           disabled={disabled}
           data-disabled={disabled}
           multiple={multiple}

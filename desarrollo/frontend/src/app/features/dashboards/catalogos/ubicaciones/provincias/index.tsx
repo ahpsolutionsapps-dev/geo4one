@@ -1,14 +1,13 @@
 import {
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 import clsx from "clsx";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
@@ -19,80 +18,26 @@ import {
 } from "@/components/shared/table";
 import { Page } from "@/components/shared/Page";
 import { Card, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
-import { fuzzyFilter } from "@/utils/react-table/fuzzyFilter";
 
 import { createProvinciasColumns } from "./components/provincias-table.columns";
 import { ProvinciasFormModal } from "./components/ProvinciasFormModal";
+import { useProvincias } from "./hooks/use-provincias";
 import { Provincia, ProvinciaFormValues } from "./provincias.types";
 
-const initialProvincias: Provincia[] = [
-  {
-    id: "1",
-    provincia: "Distrito Nacional",
-    latitud: 18.4861,
-    longitud: -69.9312,
-    activo: true,
-    fechaCreacion: "2026-01-10T10:00:00.000Z",
-    fechaActualizacion: "2026-01-10T10:00:00.000Z",
-  },
-  {
-    id: "2",
-    provincia: "Santo Domingo",
-    latitud: 18.4855,
-    longitud: -69.9316,
-    activo: true,
-    fechaCreacion: "2026-01-12T10:00:00.000Z",
-    fechaActualizacion: "2026-01-12T10:00:00.000Z",
-  },
-  {
-    id: "3",
-    provincia: "Santiago",
-    latitud: 19.4517,
-    longitud: -70.697,
-    activo: true,
-    fechaCreacion: "2026-01-14T10:00:00.000Z",
-    fechaActualizacion: "2026-01-14T10:00:00.000Z",
-  },
-  {
-    id: "4",
-    provincia: "La Vega",
-    latitud: 19.2211,
-    longitud: -70.529,
-    activo: false,
-    fechaCreacion: "2026-01-15T10:00:00.000Z",
-    fechaActualizacion: "2026-01-15T10:00:00.000Z",
-  },
-];
-
-function sortProvincias(items: Provincia[]): Provincia[] {
-  return [...items].sort((a, b) =>
-    a.provincia.localeCompare(b.provincia, "es", { sensitivity: "base" }),
-  );
-}
-
-function parseCoordinate(value: string): number | null {
-  const normalized = value.trim();
-  if (!normalized) {
-    return null;
-  }
-
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 export default function ProvinciasPage() {
-  const [provincias, setProvincias] = useState<Provincia[]>(() =>
-    sortProvincias(initialProvincias),
-  );
-  const [globalFilter, setGlobalFilter] = useState("");
+  const {
+    provincias,
+    isLoading,
+    errorMessage,
+    saveProvincia,
+    deleteProvincia,
+  } = useProvincias();
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [formOpen, setFormOpen] = useState(false);
-  const [selectedProvincia, setSelectedProvincia] = useState<Provincia | null>(
-    null,
-  );
-  const [provinceToDelete, setProvinceToDelete] = useState<Provincia | null>(
-    null,
-  );
+  const [selectedProvincia, setSelectedProvincia] = useState<Provincia | null>(null);
+  const [provinceToDelete, setProvinceToDelete] = useState<Provincia | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const columns = useMemo(
     () =>
@@ -110,17 +55,10 @@ export default function ProvinciasPage() {
     data: provincias,
     columns,
     state: {
-      globalFilter,
       sorting,
-    },
-    filterFns: {
-      fuzzy: fuzzyFilter,
     },
     enableSorting: true,
     getCoreRowModel: getCoreRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
-    getFilteredRowModel: getFilteredRowModel(),
-    globalFilterFn: fuzzyFilter,
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -132,69 +70,49 @@ export default function ProvinciasPage() {
     setFormOpen(true);
   };
 
-  const handleSaved = async (values: ProvinciaFormValues) => {
-    const now = new Date().toISOString();
+  const handleSaved = useCallback(
+    async (values: ProvinciaFormValues) => {
+      await saveProvincia(selectedProvincia?.id ?? null, values);
+      toast.success(
+        selectedProvincia
+          ? "Provincia actualizada correctamente"
+          : "Provincia creada correctamente",
+      );
+    },
+    [saveProvincia, selectedProvincia],
+  );
 
-    setProvincias((current) => {
-      if (selectedProvincia) {
-        return sortProvincias(
-          current.map((item) =>
-            item.id === selectedProvincia.id
-              ? {
-                  ...item,
-                  provincia: values.provincia.trim(),
-                  latitud: parseCoordinate(values.latitud),
-                  longitud: parseCoordinate(values.longitud),
-                  activo: values.activo,
-                  fechaActualizacion: now,
-                }
-              : item,
-          ),
-        );
-      }
-
-      const newProvincia: Provincia = {
-        id: crypto.randomUUID(),
-        provincia: values.provincia.trim(),
-        latitud: parseCoordinate(values.latitud),
-        longitud: parseCoordinate(values.longitud),
-        activo: values.activo,
-        fechaCreacion: now,
-        fechaActualizacion: now,
-      };
-
-      return sortProvincias([...current, newProvincia]);
-    });
-
-    toast.success(
-      selectedProvincia
-        ? "Provincia actualizada correctamente"
-        : "Provincia creada correctamente",
-    );
-  };
-
-  const handleDeleteProvince = () => {
+  const handleDeleteProvince = async () => {
     if (!provinceToDelete) {
       return;
     }
 
-    setProvincias((current) =>
-      current.filter((item) => item.id !== provinceToDelete.id),
-    );
-    setProvinceToDelete(null);
-    toast.success("Provincia eliminada correctamente");
+    setConfirmLoading(true);
+
+    try {
+      await deleteProvincia(provinceToDelete.id);
+      toast.success("Provincia eliminada correctamente");
+      setProvinceToDelete(null);
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
   return (
     <Page title="Provincias">
-      <div className="transition-content flex h-full min-h-0 w-full flex-col pb-5 supports-[height:1dvh]:min-h-[calc(100dvh-4.5rem)]">
-        <div className="transition-content flex min-h-0 flex-1 flex-col pt-3">
-          <div className="flex min-h-0 flex-1 flex-col px-(--margin-x)">
+      <div className="transition-content pt-3 flex h-full min-h-0 w-full flex-col pb-5 supports-[height:1dvh]:min-h-[calc(100dvh-4.5rem)]">
+        {errorMessage && (
+          <div className="mx-(--margin-x) mb-4 rounded-lg border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
+            {errorMessage}
+          </div>
+        )}
+
+        <div className="flex min-h-0 flex-1 flex-col">
             <EntityListToolbar
               title="Provincias"
               createLabel="Nueva provincia"
               createTitle="Nueva provincia"
-              searchPlaceholder="Buscar provincia..."
+              showSearch={false}
               table={table}
               onCreate={handleCreate}
               actionsPreset="primary"
@@ -202,9 +120,10 @@ export default function ProvinciasPage() {
               showExport={false}
               showShare={false}
               showSaveView={false}
+              marginClassName="mx-2 sm:mx-3 md:mx-4"
             />
 
-            <div className="mt-3 flex min-h-0 flex-1 flex-col">
+            <div className="transition-content flex min-h-0 flex-1 flex-col px-2 pt-3 sm:px-3 md:px-4">
               <Card className="relative flex min-h-0 flex-1 flex-col">
                 <div className="table-wrapper min-h-0 min-w-full flex-1 overflow-x-auto">
                   <Table className="w-full text-left rtl:text-right">
@@ -231,9 +150,7 @@ export default function ProvinciasPage() {
                                           header.getContext(),
                                         )}
                                   </span>
-                                  <TableSortIcon
-                                    sorted={header.column.getIsSorted()}
-                                  />
+                                  <TableSortIcon sorted={header.column.getIsSorted()} />
                                 </div>
                               ) : header.isPlaceholder ? null : (
                                 flexRender(
@@ -248,7 +165,20 @@ export default function ProvinciasPage() {
                     </THead>
 
                     <TBody>
-                      {table.getRowModel().rows.length === 0 ? (
+                      {isLoading ? (
+                        <Tr>
+                          <Td
+                            colSpan={table.getVisibleLeafColumns().length}
+                            className="py-16 text-center"
+                          >
+                            <div className="flex justify-center">
+                              <span className="text-sm text-gray-500 dark:text-dark-300">
+                                Cargando provincias...
+                              </span>
+                            </div>
+                          </Td>
+                        </Tr>
+                      ) : table.getRowModel().rows.length === 0 ? (
                         <Tr>
                           <Td
                             colSpan={table.getVisibleLeafColumns().length}
@@ -281,14 +211,13 @@ export default function ProvinciasPage() {
                   </Table>
                 </div>
 
-                {table.getCoreRowModel().rows.length > 0 && (
+                {!isLoading && table.getCoreRowModel().rows.length > 0 && (
                   <div className="px-4 pb-4 pt-4 sm:px-5">
                     <PaginationSection table={table} />
                   </div>
                 )}
               </Card>
             </div>
-          </div>
         </div>
       </div>
 
@@ -307,7 +236,7 @@ export default function ProvinciasPage() {
         onClose={() => setProvinceToDelete(null)}
         onOk={handleDeleteProvince}
         state="pending"
-        confirmLoading={false}
+        confirmLoading={confirmLoading}
         messages={{
           pending: {
             title: "Eliminar provincia",

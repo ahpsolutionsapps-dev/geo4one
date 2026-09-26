@@ -49,7 +49,7 @@ export function CollapsibleItem({ data }: { data: NavigationTree }) {
           </AccordionButton>
           <AccordionPanel>
             {childs.map((i) => (
-              <MenuItem key={i.path} data={i} />
+              <MenuItem key={`${i.id}-${i.path ?? "route"}`} data={i} />
             ))}
           </AccordionPanel>
         </>

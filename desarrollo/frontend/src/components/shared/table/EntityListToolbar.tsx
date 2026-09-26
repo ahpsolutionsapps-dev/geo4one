@@ -22,6 +22,7 @@ interface EntityListToolbarProps<TData> {
   showSaveView?: boolean;
   showExportPdfInMoreMenu?: boolean;
   marginClassName?: string;
+  showSearch?: boolean;
 }
 
 export function EntityListToolbar<TData>({
@@ -35,6 +36,7 @@ export function EntityListToolbar<TData>({
   extraActions,
   onCreate,
   marginClassName = "mx-(--margin-x)",
+  showSearch = true,
 }: EntityListToolbarProps<TData>) {
   const globalFilter = (table.getState().globalFilter as string) ?? "";
 
@@ -47,17 +49,19 @@ export function EntityListToolbar<TData>({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-        <Input
-          ref={searchInputRef}
-          value={globalFilter}
-          onChange={(event) => table.setGlobalFilter(event.target.value)}
-          placeholder={searchPlaceholder || "Buscar..."}
-          prefix={<MagnifyingGlassIcon className="size-4" />}
-          classNames={{
-            root: "min-w-[220px]",
-            input: "h-9",
-          }}
-        />
+        {showSearch ? (
+          <Input
+            ref={searchInputRef}
+            value={globalFilter}
+            onChange={(event) => table.setGlobalFilter(event.target.value)}
+            placeholder={searchPlaceholder || "Buscar..."}
+            prefix={<MagnifyingGlassIcon className="size-4" />}
+            classNames={{
+              root: "min-w-[220px]",
+              input: "h-9",
+            }}
+          />
+        ) : null}
 
         {tableConfig ? <div className="shrink-0">{tableConfig}</div> : null}
 

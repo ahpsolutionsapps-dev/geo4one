@@ -70,7 +70,16 @@ CREATE TABLE "ProveedoresTelefonos" (
     CONSTRAINT "FK_ProveedoresTelefonos_Proveedores"
         FOREIGN KEY ("IdProveedor")
         REFERENCES "Proveedores" ("IdProveedor")
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT "CHK_ProveedoresTelefonos_PrincipalTipo"
+        CHECK (
+            "Principal" = FALSE
+            OR (
+                "Tipo" IS NOT NULL
+                AND LENGTH(TRIM("Tipo")) > 0
+            )
+        )
 );
 
 
@@ -347,6 +356,10 @@ CREATE INDEX "IX_Proveedores_IdSectorBarrio"
 
 CREATE INDEX "IX_ProveedoresTelefonos_IdProveedor"
     ON "ProveedoresTelefonos" ("IdProveedor");
+
+CREATE UNIQUE INDEX "UX_ProveedoresTelefonos_Principal_Activo"
+    ON "ProveedoresTelefonos" ("IdProveedor")
+    WHERE "Principal" = TRUE AND "Activo" = TRUE;
 
 
 -- ============================================================

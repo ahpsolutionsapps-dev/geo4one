@@ -50,9 +50,9 @@ export function Group({ data }: { data: NavigationTree }) {
             {data.childs.map((item) => {
               switch (item.type) {
                 case "collapse":
-                  return <CollapsibleItem key={item.path} data={item} />;
+                  return <CollapsibleItem key={item.id} data={item} />;
                 case "item":
-                  return <MenuItem key={item.path} data={item} />;
+                  return <MenuItem key={item.id} data={item} />;
                 default:
                   return null;
               }

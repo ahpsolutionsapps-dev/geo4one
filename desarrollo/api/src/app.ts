@@ -9,8 +9,12 @@ import { buildAuthRouter } from './features/auth/presentation/auth.routes';
 import { authMiddleware } from './features/auth/presentation/middlewares/auth.middleware';
 import { requireVerifiedMiddleware } from './features/auth/presentation/middlewares/require-verified.middleware';
 import { buildRolesRouter } from './features/roles/presentation/roles.routes';
+import { buildProvinciasRouter } from './features/provincias/presentation/provincias.routes';
+import { buildMunicipiosRouter } from './features/municipios/presentation/municipios.routes';
+import { buildSectoresRouter } from './features/sectores/presentation/sectores.routes';
 import { buildUsuariosRouter } from './features/usuarios/presentation/usuarios.routes';
 import { buildElementosRouter } from './features/elementos/presentation/elementos.routes';
+import { buildProveedoresRouter } from './features/proveedores/presentation/proveedores.routes';
 
 export function createApp(): Application {
   const app = express();
@@ -32,6 +36,10 @@ export function createApp(): Application {
 
   app.use('/usuarios', buildUsuariosRouter());
   app.use('/roles', buildRolesRouter());
+  app.use('/provincias', buildProvinciasRouter());
+  app.use('/municipios', buildMunicipiosRouter());
+  app.use('/sectores', buildSectoresRouter());
+  app.use('/proveedores', buildProveedoresRouter());
   app.use('/elementos', buildElementosRouter());
 
   app.use(errorHandler);
