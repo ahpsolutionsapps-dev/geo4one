@@ -11,7 +11,7 @@ import {
 } from "@headlessui/react";
 import { useBreakpointsContext } from "@/app/contexts/breakpoint/context";
 import clsx from "clsx";
-import { ReactNode } from "react";
+import { ReactNode, RefObject } from "react";
 
 // Local Imports
 import { Button } from "@/components/ui";
@@ -24,6 +24,8 @@ export type AnchorPosition = PopoverPanelProps["anchor"];
 interface BaseFilterProps {
   children: ReactNode;
   buttonContent: ReactNode;
+  buttonTitle?: string;
+  buttonRef?: RefObject<HTMLButtonElement | null>;
   classNames?: {
     button?: string;
   };
@@ -42,6 +44,8 @@ interface DesktopViewProps extends BaseFilterProps {
 export const ResponsiveFilter = ({
   children,
   buttonContent,
+  buttonTitle,
+  buttonRef,
   anchor,
   classNames,
 }: ResponsiveFilterProps) => {
@@ -53,6 +57,8 @@ export const ResponsiveFilter = ({
     <View
       {...{
         buttonContent,
+        buttonTitle,
+        buttonRef,
         anchor,
         classNames,
       }}
@@ -65,6 +71,8 @@ export const ResponsiveFilter = ({
 const MobileView = ({
   children,
   buttonContent,
+  buttonTitle,
+  buttonRef,
   classNames,
 }: MobileViewProps) => {
   const [isOpen, { open, close }] = useDisclosure(false);
@@ -72,7 +80,10 @@ const MobileView = ({
   return (
     <>
       <Button
+        ref={buttonRef}
         variant="outlined"
+        title={buttonTitle}
+        aria-label={buttonTitle}
         className={clsx(
           "h-8 gap-2 px-2.5 text-xs whitespace-nowrap",
           isOpen
@@ -121,6 +132,8 @@ const MobileView = ({
 const DesktopView = ({
   children,
   buttonContent,
+  buttonTitle,
+  buttonRef,
   anchor = { to: "bottom start", gap: 12 },
   classNames,
 }: DesktopViewProps) => {
@@ -129,8 +142,11 @@ const DesktopView = ({
       {({ open }) => (
         <>
           <PopoverButton
+            ref={buttonRef}
             as={Button}
             variant="outlined"
+            title={buttonTitle}
+            aria-label={buttonTitle}
             className={clsx(
               "h-8 gap-2 px-2.5 text-xs whitespace-nowrap",
               open

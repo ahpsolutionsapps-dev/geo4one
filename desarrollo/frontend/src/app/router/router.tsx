@@ -3,7 +3,7 @@ import { createBrowserRouter, RouteObject } from "react-router";
 
 // Local Imports
 import Root from "@/app/layouts/Root";
-import RootErrorBoundary from "@/app/pages/errors/RootErrorBoundary";
+import RootErrorBoundary from "@/app/features/errors/RootErrorBoundary";
 import { SplashScreen } from "@/components/template/SplashScreen";
 import { protectedRoutes } from "./protected";
 import { ghostRoutes } from "./ghost";

@@ -13,7 +13,7 @@ const ghostRoutes: RouteObject = {
     {
       path: "login",
       lazy: async () => ({
-        Component: (await import("@/app/pages/Auth")).default,
+        Component: (await import("@/app/features/Auth")).default,
       }),
     },
     // Add additional ghost routes as needed
