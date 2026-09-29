@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
+import { HttpUploadServiceClient } from '../../../../shared/infrastructure/upload-service/upload-service.client';
 import { getAuthUserId } from '../../../../shared/presentation/get-auth-user-id';
+import { ImportProvinciasExcelService } from '../../application/services/import-provincias-excel.service';
 import { CreateProvinciaUseCase } from '../../application/use-cases/create-provincia.use-case';
 import { DeactivateProvinciaUseCase } from '../../application/use-cases/deactivate-provincia.use-case';
 import { GetProvinciaByIdUseCase } from '../../application/use-cases/get-provincia-by-id.use-case';
@@ -18,6 +20,8 @@ export class ProvinciasController {
     private readonly createProvincia: CreateProvinciaUseCase,
     private readonly updateProvincia: UpdateProvinciaUseCase,
     private readonly deactivateProvincia: DeactivateProvinciaUseCase,
+    private readonly uploadService: HttpUploadServiceClient,
+    private readonly importProvinciasExcel: ImportProvinciasExcelService,
   ) {}
 
   list = async (_req: Request, res: Response): Promise<void> => {
@@ -62,5 +66,45 @@ export class ProvinciasController {
     const params = provinciaIdParamsSchema.parse(req.params);
     await this.deactivateProvincia.execute(params.id, idUsuario);
     res.status(204).send();
+  };
+
+  importExcel = async (req: Request, res: Response): Promise<void> => {
+    if (!req.file) {
+      res.status(400).json({ success: false, message: 'Archivo requerido' });
+      return;
+    }
+
+    const idUsuario = getAuthUserId(req);
+    const uploaded = await this.uploadService.uploadFile(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+    );
+
+    const importResult = await this.importProvinciasExcel.execute(
+      req.file.buffer,
+      req.file.originalname,
+      idUsuario,
+    );
+
+    res.status(201).json({
+      success: true,
+      message:
+        importResult.importedCount > 0
+          ? `Se importaron ${importResult.importedCount} provincias correctamente`
+          : 'No se importaron provincias nuevas',
+      data: {
+        id: uploaded.id,
+        fileName: uploaded.fileName,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        hash: '',
+        url: uploaded.url,
+        importedCount: importResult.importedCount,
+        skippedCount: importResult.skippedCount,
+        duplicates: importResult.duplicates,
+      },
+    });
   };
 }

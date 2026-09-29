@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model File {
+  id               String   @id
+  fileName         String   @map("FileName")
+  originalFileName String   @map("OriginalFileName")
+  extension        String   @map("Extension")
+  mimeType         String   @map("MimeType")
+  fileSize         Int      @map("FileSize")
+  storagePath      String   @map("StoragePath")
+  hash             String?  @map("Hash")
+  isPublic         Int      @default(0) @map("IsPublic")
+  createdAt        DateTime @default(now()) @map("CreatedAt")
+  updatedAt        DateTime? @map("UpdatedAt")
+  deletedAt        DateTime? @map("DeletedAt")
+
+  relations  FileRelation[]
+  categories FileCategoryRelation[]
+  versions   FileVersion[]
+  tags       FileTag[]
+  signedUrls SignedUrl[]
+
+  @@map("Files")
+}
+
+model FileRelation {
+  id         String   @id
+  fileId     String   @map("FileId")
+  entityType String   @map("EntityType")
+  entityId   String   @map("EntityId")
+  createdAt  DateTime @default(now()) @map("CreatedAt")
+
+  file File @relation(fields: [fileId], references: [id])
+
+  @@map("FileRelations")
+}
+
+model FileCategory {
+  id          String  @id
+  name        String  @map("Name")
+  description String? @map("Description")
+
+  files FileCategoryRelation[]
+
+  @@map("FileCategories")
+}
+
+model FileCategoryRelation {
+  fileId     String @map("FileId")
+  categoryId String @map("CategoryId")
+
+  file     File         @relation(fields: [fileId], references: [id])
+  category FileCategory @relation(fields: [categoryId], references: [id])
+
+  @@id([fileId, categoryId])
+  @@map("FileCategoryRelations")
+}
+
+model FileVersion {
+  id            String   @id
+  fileId        String   @map("FileId")
+  versionNumber Int      @map("VersionNumber")
+  storagePath   String   @map("StoragePath")
+  fileSize      Int      @map("FileSize")
+  createdAt     DateTime @default(now()) @map("CreatedAt")
+
+  file File @relation(fields: [fileId], references: [id])
+
+  @@map("FileVersions")
+}
+
+model Tag {
+  id   String @id
+  name String @unique @map("Name")
+
+  files FileTag[]
+
+  @@map("Tags")
+}
+
+model FileTag {
+  fileId String @map("FileId")
+  tagId  String @map("TagId")
+
+  file File @relation(fields: [fileId], references: [id])
+  tag  Tag  @relation(fields: [tagId], references: [id])
+
+  @@id([fileId, tagId])
+  @@map("FileTags")
+}
+
+model ApiKey {
+  id         String    @id
+  name       String    @map("Name")
+  apiKey     String    @unique @map("ApiKey")
+  isActive   Int       @default(1) @map("IsActive")
+  createdAt  DateTime  @default(now()) @map("CreatedAt")
+  lastUsedAt DateTime? @map("LastUsedAt")
+
+  auditLogs AuditLog[]
+
+  @@map("ApiKeys")
+}
+
+model SignedUrl {
+  id        String   @id
+  fileId    String   @map("FileId")
+  token     String   @unique @map("Token")
+  expiresAt DateTime @map("ExpiresAt")
+  createdAt DateTime @default(now()) @map("CreatedAt")
+
+  file File @relation(fields: [fileId], references: [id])
+
+  @@map("SignedUrls")
+}
+
+model AuditLog {
+  id        String   @id
+  apiKeyId  String?  @map("ApiKeyId")
+  action    String   @map("Action")
+  fileId    String?  @map("FileId")
+  details   String?  @map("Details")
+  ipAddress String?  @map("IpAddress")
+  createdAt DateTime @default(now()) @map("CreatedAt")
+
+  apiKey ApiKey? @relation(fields: [apiKeyId], references: [id])
+
+  @@map("AuditLogs")
+}

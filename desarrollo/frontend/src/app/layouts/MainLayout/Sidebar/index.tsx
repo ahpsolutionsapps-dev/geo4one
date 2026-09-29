@@ -6,6 +6,7 @@ import { useLocation } from "react-router";
 import { useBreakpointsContext } from "@/app/contexts/breakpoint/context";
 import { useSidebarContext } from "@/app/contexts/sidebar/context";
 import { navigation } from "@/app/navigation";
+import { NavigationTree } from "@/@types/navigation";
 import { useDidUpdate } from "@/hooks";
 import { isRouteActive } from "@/utils/isRouteActive";
 import { MainPanel } from "./MainPanel";
@@ -15,13 +16,32 @@ import { PrimePanel } from "./PrimePanel";
 
 export type SegmentPath = string | undefined;
 
+function hasActiveRouteInTree(
+  node: NavigationTree,
+  pathname: string,
+): boolean {
+  if (isRouteActive(node.path, pathname)) {
+    return true;
+  }
+
+  if (!node.childs?.length) {
+    return false;
+  }
+
+  return node.childs.some((child) => hasActiveRouteInTree(child, pathname));
+}
+
+function findActiveSegment(pathname: string) {
+  return navigation.find((segment) => hasActiveRouteInTree(segment, pathname));
+}
+
 export function Sidebar() {
   const { pathname } = useLocation();
   const { name, lgAndDown } = useBreakpointsContext();
   const { isExpanded, close } = useSidebarContext();
 
   const initialSegment = useMemo(
-    () => navigation.find((item) => isRouteActive(item.path, pathname)),
+    () => findActiveSegment(pathname),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
@@ -35,9 +55,7 @@ export function Sidebar() {
   }, [activeSegmentPath]);
 
   useDidUpdate(() => {
-    const activePath = navigation.find((item) =>
-      isRouteActive(item.path, pathname),
-    )?.path;
+    const activePath = findActiveSegment(pathname)?.path;
 
     setActiveSegmentPath(activePath);
   }, [pathname]);

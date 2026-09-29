@@ -1,0 +1,223 @@
+import { PrismaClient } from '@prisma/client';
+import { ComboAnunciante } from '../../domain/entities/combo-anunciante';
+import {
+  ComboAnuncianteRepository,
+  ComboMarcaProductoOption,
+  CreateComboAnuncianteInput,
+  UpdateComboAnuncianteInput,
+} from '../../domain/repositories/combo-anunciante-repository';
+
+function mapRow(row: {
+  IdComboAnunciante: bigint;
+  ComboAnunciante: string;
+  Activo: boolean;
+  FechaCreacion: Date;
+  FechaActualizacion: Date;
+  CreadoPor: bigint | null;
+  ActualizadoPor: bigint | null;
+  CombosAnunciantesDetalles: {
+    IdMarcaProducto: bigint;
+    Orden: number;
+    MarcasProductos: {
+      MarcaProducto: string;
+      Anunciantes: { Anunciante: string };
+    };
+  }[];
+}) {
+  return new ComboAnunciante({
+    idComboAnunciante: Number(row.IdComboAnunciante),
+    comboAnunciante: row.ComboAnunciante,
+    marcas: row.CombosAnunciantesDetalles.map((item) => ({
+      idMarcaProducto: Number(item.IdMarcaProducto),
+      marcaProducto: item.MarcasProductos.MarcaProducto,
+      anunciante: item.MarcasProductos.Anunciantes.Anunciante,
+      orden: item.Orden,
+    })),
+    activo: row.Activo,
+    fechaCreacion: row.FechaCreacion,
+    fechaActualizacion: row.FechaActualizacion,
+    creadoPor: row.CreadoPor === null ? null : Number(row.CreadoPor),
+    actualizadoPor: row.ActualizadoPor === null ? null : Number(row.ActualizadoPor),
+  });
+}
+
+export class PrismaComboAnuncianteRepository implements ComboAnuncianteRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async findMany(): Promise<ComboAnunciante[]> {
+    const rows = await this.prisma.combosAnunciantes.findMany({
+      include: {
+        CombosAnunciantesDetalles: {
+          orderBy: { Orden: 'asc' },
+          include: {
+            MarcasProductos: {
+              select: {
+                MarcaProducto: true,
+                Anunciantes: { select: { Anunciante: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { ComboAnunciante: 'asc' },
+    });
+
+    return rows.map(mapRow);
+  }
+
+  async findById(idComboAnunciante: number): Promise<ComboAnunciante | null> {
+    const row = await this.prisma.combosAnunciantes.findUnique({
+      where: { IdComboAnunciante: BigInt(idComboAnunciante) },
+      include: {
+        CombosAnunciantesDetalles: {
+          orderBy: { Orden: 'asc' },
+          include: {
+            MarcasProductos: {
+              select: {
+                MarcaProducto: true,
+                Anunciantes: { select: { Anunciante: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return row ? mapRow(row) : null;
+  }
+
+  async findMarcasByIds(idsMarcas: number[]): Promise<number[]> {
+    if (idsMarcas.length === 0) {
+      return [];
+    }
+
+    const rows = await this.prisma.marcasProductos.findMany({
+      where: {
+        IdMarcaProducto: { in: idsMarcas.map((id) => BigInt(id)) },
+      },
+      select: { IdMarcaProducto: true },
+    });
+
+    return rows.map((row) => Number(row.IdMarcaProducto));
+  }
+
+  async findMarcaProductoOptions(): Promise<ComboMarcaProductoOption[]> {
+    const rows = await this.prisma.marcasProductos.findMany({
+      where: { Activo: true },
+      include: {
+        Anunciantes: { select: { Anunciante: true } },
+      },
+      orderBy: [{ Anunciantes: { Anunciante: 'asc' } }, { MarcaProducto: 'asc' }],
+    });
+
+    return rows.map((row) => ({
+      idMarcaProducto: Number(row.IdMarcaProducto),
+      marcaProducto: row.MarcaProducto,
+      anunciante: row.Anunciantes.Anunciante,
+    }));
+  }
+
+  async create(input: CreateComboAnuncianteInput): Promise<ComboAnunciante> {
+    const created = await this.prisma.$transaction(async (tx) => {
+      const combo = await tx.combosAnunciantes.create({
+        data: {
+          ComboAnunciante: input.comboAnunciante,
+          Activo: true,
+          FechaCreacion: new Date(),
+          FechaActualizacion: new Date(),
+          CreadoPor: BigInt(input.creadoPor),
+          ActualizadoPor: BigInt(input.creadoPor),
+        },
+      });
+
+      await tx.combosAnunciantesDetalles.createMany({
+        data: input.marcas.map((marca) => ({
+          IdComboAnunciante: combo.IdComboAnunciante,
+          IdMarcaProducto: BigInt(marca.idMarcaProducto),
+          Orden: marca.orden,
+          FechaCreacion: new Date(),
+          CreadoPor: BigInt(input.creadoPor),
+        })),
+      });
+
+      return tx.combosAnunciantes.findUnique({
+        where: { IdComboAnunciante: combo.IdComboAnunciante },
+        include: {
+          CombosAnunciantesDetalles: {
+            orderBy: { Orden: 'asc' },
+            include: {
+              MarcasProductos: {
+                select: {
+                  MarcaProducto: true,
+                  Anunciantes: { select: { Anunciante: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    return mapRow(created!);
+  }
+
+  async update(idComboAnunciante: number, input: UpdateComboAnuncianteInput): Promise<ComboAnunciante> {
+    const updated = await this.prisma.$transaction(async (tx) => {
+      await tx.combosAnunciantes.update({
+        where: { IdComboAnunciante: BigInt(idComboAnunciante) },
+        data: {
+          ...(input.comboAnunciante !== undefined ? { ComboAnunciante: input.comboAnunciante } : {}),
+          ...(input.activo !== undefined ? { Activo: input.activo } : {}),
+          FechaActualizacion: new Date(),
+          ActualizadoPor: BigInt(input.actualizadoPor),
+        },
+      });
+
+      if (input.marcas !== undefined) {
+        await tx.combosAnunciantesDetalles.deleteMany({
+          where: { IdComboAnunciante: BigInt(idComboAnunciante) },
+        });
+
+        await tx.combosAnunciantesDetalles.createMany({
+          data: input.marcas.map((marca) => ({
+            IdComboAnunciante: BigInt(idComboAnunciante),
+            IdMarcaProducto: BigInt(marca.idMarcaProducto),
+            Orden: marca.orden,
+            FechaCreacion: new Date(),
+            CreadoPor: BigInt(input.actualizadoPor),
+          })),
+        });
+      }
+
+      return tx.combosAnunciantes.findUnique({
+        where: { IdComboAnunciante: BigInt(idComboAnunciante) },
+        include: {
+          CombosAnunciantesDetalles: {
+            orderBy: { Orden: 'asc' },
+            include: {
+              MarcasProductos: {
+                select: {
+                  MarcaProducto: true,
+                  Anunciantes: { select: { Anunciante: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    return mapRow(updated!);
+  }
+
+  async deactivate(idComboAnunciante: number, actualizadoPor: number): Promise<void> {
+    await this.prisma.combosAnunciantes.update({
+      where: { IdComboAnunciante: BigInt(idComboAnunciante) },
+      data: {
+        Activo: false,
+        FechaActualizacion: new Date(),
+        ActualizadoPor: BigInt(actualizadoPor),
+      },
+    });
+  }
+}

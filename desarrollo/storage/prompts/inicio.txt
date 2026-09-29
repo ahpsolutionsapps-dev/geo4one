@@ -1,0 +1,343 @@
+Actúa como un Arquitecto de Software Senior y Desarrollador Backend Senior especializado en Node.js y TypeScript.
+
+Lee el archivo SQL adjunto (database/file.sql) que contiene las tablas SQLite del sistema de archivos (Files, FileRelations, FileCategories, FileCategoryRelations, FileVersions, Tags y FileTags).
+
+Objetivo
+
+Desarrollar un Upload Service independiente que permita a cualquier aplicación subir, descargar, consultar y administrar archivos utilizando una API Key.
+
+El sistema debe funcionar como un microservicio reutilizable que pueda ser consumido por:
+
+- Flutter
+- React
+- React Native
+- Angular
+- Vue
+- .NET
+- Go
+- PHP
+- Aplicaciones móviles
+- Aplicaciones de escritorio
+- Otros microservicios
+
+Requisitos de Arquitectura
+
+- Node.js
+- TypeScript
+- Express.js
+- SQLite
+- Prisma ORM
+- UUID
+- Multer
+- JWT (opcional para administración)
+- Swagger/OpenAPI
+- Clean Architecture
+- SOLID
+- Repository Pattern
+- Dependency Injection
+- DTO Pattern
+- Middleware Pattern
+- Result Pattern para manejo de errores
+
+Estructura del Proyecto
+
+src/
+├── domain/
+│   ├── entities/
+│   ├── repositories/
+│   ├── services/
+│   └── value-objects/
+│
+├── application/
+│   ├── dtos/
+│   ├── use-cases/
+│   ├── interfaces/
+│   └── validators/
+│
+├── infrastructure/
+│   ├── database/
+│   ├── repositories/
+│   ├── storage/
+│   └── security/
+│
+├── presentation/
+│   ├── controllers/
+│   ├── middlewares/
+│   ├── routes/
+│   └── validators/
+│
+├── shared/
+│   ├── errors/
+│   ├── helpers/
+│   ├── constants/
+│   └── types/
+│
+├── config/
+│
+└── server.ts
+
+Base de Datos
+
+Utilizar las tablas definidas en el archivo SQL.
+
+Generar además la tabla:
+
+CREATE TABLE ApiKeys (
+    Id TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    ApiKey TEXT NOT NULL UNIQUE,
+    IsActive INTEGER NOT NULL DEFAULT 1,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+Generar también el esquema Prisma correspondiente.
+
+Autenticación por API Key
+
+Todos los endpoints deben requerir:
+
+Header:
+
+X-API-KEY
+
+Implementar middleware para:
+
+- Validar API Key.
+- Verificar que exista.
+- Verificar que esté activa.
+- Registrar último uso.
+- Rechazar peticiones inválidas.
+- Permitir múltiples API Keys por aplicación.
+
+Almacenamiento de Archivos
+
+Guardar archivos físicamente en:
+
+storage/
+
+Estructura:
+
+storage/
+├── 2026/
+│   ├── 06/
+│   │   ├── 20/
+
+Nombre físico:
+
+UUID.Extension
+
+Ejemplo:
+
+550e8400-e29b-41d4-a716-446655440000.jpg
+
+Registrar en la tabla Files:
+
+- UUID
+- Nombre original
+- Nombre físico
+- MIME Type
+- Tamaño
+- Ruta física
+- Hash SHA256
+- Fecha de creación
+
+Configuración
+
+Crear archivo .env con:
+
+PORT=
+DATABASE_URL=
+STORAGE_PATH=
+MAX_FILE_SIZE=
+ALLOWED_EXTENSIONS=
+API_KEY_HEADER=
+PUBLIC_URL=
+
+Validaciones
+
+Implementar:
+
+- Tamaño máximo configurable.
+- Lista blanca de extensiones.
+- Lista blanca de MIME Types.
+- Validación de nombre de archivo.
+- Generación SHA256.
+- Detección de duplicados.
+- Configuración habilitable/deshabilitable.
+
+Endpoints
+
+POST /api/files/upload
+
+Subir archivo.
+
+Tipo:
+
+multipart/form-data
+
+Campo:
+
+file
+
+Respuesta:
+
+{
+  "success": true,
+  "message": "Archivo cargado correctamente",
+  "data": {
+    "id": "uuid",
+    "fileName": "uuid.jpg",
+    "url": "/api/files/download/{id}"
+  }
+}
+
+GET /api/files
+
+Listado paginado.
+
+Filtros:
+
+- fileName
+- mimeType
+- dateFrom
+- dateTo
+- category
+- tag
+
+GET /api/files/:id
+
+Obtener metadata.
+
+GET /api/files/download/:id
+
+Descargar archivo.
+
+DELETE /api/files/:id
+
+Eliminar archivo.
+
+POST /api/files/:id/categories
+
+Asignar categorías.
+
+POST /api/files/:id/tags
+
+Asignar etiquetas.
+
+POST /api/files/:id/version
+
+Crear nueva versión.
+
+GET /api/files/:id/versions
+
+Consultar versiones.
+
+Administración de API Keys
+
+POST /api/admin/apikeys
+
+Crear API Key.
+
+GET /api/admin/apikeys
+
+Listar API Keys.
+
+PUT /api/admin/apikeys/:id
+
+Activar o desactivar API Key.
+
+DELETE /api/admin/apikeys/:id
+
+Eliminar API Key.
+
+Seguridad
+
+Implementar:
+
+- Helmet
+- CORS configurable
+- Rate Limiting por API Key
+- Sanitización de entradas
+- Protección contra Path Traversal
+- Validación de archivos peligrosos
+- Logs de auditoría
+
+Logs
+
+Registrar:
+
+- Subidas
+- Descargas
+- Eliminaciones
+- Errores
+- Accesos rechazados
+- Uso de API Keys
+
+Utilizar:
+
+- Winston
+
+Swagger
+
+Generar:
+
+/api/docs
+
+Documentar:
+
+- Headers
+- Request
+- Response
+- Ejemplos
+- Errores
+
+Health Check
+
+GET /health
+
+Respuesta:
+
+{
+  "status": "ok",
+  "database": true,
+  "storage": true,
+  "timestamp": "2026-06-20T10:00:00Z"
+}
+
+Extras
+
+Implementar:
+
+- URLs temporales firmadas.
+- Expiración configurable.
+- Versionado de archivos.
+- Soft Delete.
+- Restauración de archivos eliminados.
+- Categorías.
+- Etiquetas.
+- Métricas.
+- Compresión opcional.
+- Hash SHA256.
+- Preparación futura para almacenamiento en:
+  - Amazon S3
+  - MinIO
+  - Azure Blob Storage
+  - Google Cloud Storage
+
+Documentación Final
+
+Generar:
+
+- Código fuente completo.
+- package.json.
+- tsconfig.json.
+- Prisma Schema.
+- Estructura de carpetas.
+- README.md.
+- Script de instalación.
+- Script de migración.
+- Script de ejecución.
+- Colección Postman.
+- Ejemplos de integración para Flutter, React, React Native, .NET, Go y PHP.
+
+El resultado debe ser un proyecto completo, profesional, escalable y listo para producción.

@@ -8,9 +8,9 @@ import {
   useReactTable,
   ColumnDef,
 } from "@tanstack/react-table";
-import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { ArrowUpTrayIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogPanel, Transition, TransitionChild } from "@headlessui/react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import { Button, Card, Input, InputErrorMsg, Switch, Table, TBody, Td, Th, THead
 import { fuzzyFilter } from "@/utils/react-table/fuzzyFilter";
 import { typedYupResolver } from "@/utils/typedYupResolver";
 
+import { UploadedCatalogoExcelFile } from "./catalogos-elementos.api";
 import { CatalogoSimpleFormValues, CatalogoSimpleItem } from "./catalogos-elementos.types";
 import { useSimpleCatalog } from "./use-simple-catalog";
 
@@ -32,6 +33,7 @@ interface SimpleCatalogApi {
   create: (values: CatalogoSimpleFormValues) => Promise<CatalogoSimpleItem>;
   update: (id: string, values: CatalogoSimpleFormValues) => Promise<CatalogoSimpleItem>;
   remove: (id: string) => Promise<void>;
+  uploadExcel?: (file: File) => Promise<UploadedCatalogoExcelFile>;
 }
 
 interface SimpleCatalogModulePageProps {
@@ -184,7 +186,7 @@ export function SimpleCatalogModulePage({
   loadErrorMessage,
   api,
 }: SimpleCatalogModulePageProps) {
-  const { items, isLoading, errorMessage, saveItem, deleteItem } = useSimpleCatalog(
+  const { items, isLoading, errorMessage, saveItem, deleteItem, reload } = useSimpleCatalog(
     api,
     loadErrorMessage,
   );
@@ -195,6 +197,8 @@ export function SimpleCatalogModulePage({
   const [selectedItem, setSelectedItem] = useState<CatalogoSimpleItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<CatalogoSimpleItem | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const columns = useMemo<ColumnDef<CatalogoSimpleItem>[]>(
     () => [
@@ -337,6 +341,52 @@ export function SimpleCatalogModulePage({
     }
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportExcel = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (!api.uploadExcel) {
+      return;
+    }
+
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const validFileExtension = /\.(xlsx|xls)$/i.test(file.name);
+
+    if (!validFileExtension) {
+      toast.error("Selecciona un archivo Excel (.xlsx o .xls)");
+      return;
+    }
+
+    setImportLoading(true);
+
+    try {
+      const uploadedFile = await api.uploadExcel(file);
+      const duplicatedMessage =
+        uploadedFile.skippedCount > 0
+          ? `; ${uploadedFile.skippedCount} filas se omitieron`
+          : "";
+
+      toast.success(
+        `Archivo "${uploadedFile.originalFileName}" importado. ${uploadedFile.importedCount} registros nuevos cargados${duplicatedMessage}`,
+      );
+
+      await reload();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo importar el archivo",
+      );
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   return (
     <Page title={title}>
       <div className="transition-content pt-3 flex h-full min-h-0 w-full flex-col pb-5 supports-[height:1dvh]:min-h-[calc(100dvh-4.5rem)]">
@@ -357,6 +407,31 @@ export function SimpleCatalogModulePage({
               setSelectedItem(null);
               setFormOpen(true);
             }}
+            extraActions={
+              api.uploadExcel ? (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    className="hidden"
+                    onChange={handleImportExcel}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    className="h-9 gap-1.5"
+                    onClick={handleImportClick}
+                    disabled={importLoading}
+                    title={`Importar ${title.toLowerCase()} desde archivo Excel`}
+                  >
+                    <ArrowUpTrayIcon className="size-4" />
+                    <span>{importLoading ? "Importando..." : "Importar Excel"}</span>
+                  </Button>
+                </>
+              ) : null
+            }
             actionsPreset="primary"
             showPrint={false}
             showExport={false}

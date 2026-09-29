@@ -1,0 +1,72 @@
+{
+  "info": {
+    "name": "Upload Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "apiKey", "value": "your-api-key" },
+    { "key": "adminToken", "value": "change-me-admin-token" },
+    { "key": "fileId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Upload File",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "X-API-KEY", "value": "{{apiKey}}" }],
+        "body": {
+          "mode": "formdata",
+          "formdata": [{ "key": "file", "type": "file", "src": "" }]
+        },
+        "url": "{{baseUrl}}/api/files/upload"
+      }
+    },
+    {
+      "name": "List Files",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-KEY", "value": "{{apiKey}}" }],
+        "url": "{{baseUrl}}/api/files?page=1&limit=20"
+      }
+    },
+    {
+      "name": "Get File Metadata",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-KEY", "value": "{{apiKey}}" }],
+        "url": "{{baseUrl}}/api/files/{{fileId}}"
+      }
+    },
+    {
+      "name": "Download File",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-API-KEY", "value": "{{apiKey}}" }],
+        "url": "{{baseUrl}}/api/files/download/{{fileId}}"
+      }
+    },
+    {
+      "name": "Create API Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-Admin-Token", "value": "{{adminToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\": \"Mi App\"}"
+        },
+        "url": "{{baseUrl}}/api/admin/apikeys"
+      }
+    }
+  ]
+}

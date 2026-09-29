@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
+import { HttpUploadServiceClient } from '../../../../shared/infrastructure/upload-service/upload-service.client';
 import { getAuthUserId } from '../../../../shared/presentation/get-auth-user-id';
+import { ImportSectoresExcelService } from '../../application/services/import-sectores-excel.service';
 import { CreateSectorUseCase } from '../../application/use-cases/create-sector.use-case';
 import { DeactivateSectorUseCase } from '../../application/use-cases/deactivate-sector.use-case';
 import { GetSectorByIdUseCase } from '../../application/use-cases/get-sector-by-id.use-case';
@@ -18,6 +20,8 @@ export class SectoresController {
     private readonly createSector: CreateSectorUseCase,
     private readonly updateSector: UpdateSectorUseCase,
     private readonly deactivateSector: DeactivateSectorUseCase,
+    private readonly uploadService: HttpUploadServiceClient,
+    private readonly importSectoresExcel: ImportSectoresExcelService,
   ) {}
 
   list = async (_req: Request, res: Response): Promise<void> => {
@@ -66,5 +70,45 @@ export class SectoresController {
     const params = sectorIdParamsSchema.parse(req.params);
     await this.deactivateSector.execute(params.id, idUsuario);
     res.status(204).send();
+  };
+
+  importExcel = async (req: Request, res: Response): Promise<void> => {
+    if (!req.file) {
+      res.status(400).json({ success: false, message: 'Archivo requerido' });
+      return;
+    }
+
+    const idUsuario = getAuthUserId(req);
+    const uploaded = await this.uploadService.uploadFile(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+    );
+
+    const importResult = await this.importSectoresExcel.execute(
+      req.file.buffer,
+      req.file.originalname,
+      idUsuario,
+    );
+
+    res.status(201).json({
+      success: true,
+      message:
+        importResult.importedCount > 0
+          ? `Se importaron ${importResult.importedCount} sectores correctamente`
+          : 'No se importaron sectores nuevos',
+      data: {
+        id: uploaded.id,
+        fileName: uploaded.fileName,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        hash: '',
+        url: uploaded.url,
+        importedCount: importResult.importedCount,
+        skippedCount: importResult.skippedCount,
+        duplicates: importResult.duplicates,
+      },
+    });
   };
 }

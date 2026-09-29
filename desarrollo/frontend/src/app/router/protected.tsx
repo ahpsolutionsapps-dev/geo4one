@@ -77,6 +77,76 @@ const protectedRoutes: RouteObject = {
               }),
             },
             {
+              path: "anunciantes/listado",
+              lazy: async () => ({
+                Component: (
+                  await import(
+                    "@/app/features/dashboards/anunciantes/anunciantes"
+                  )
+                ).default,
+              }),
+            },
+            {
+              path: "anunciantes/sectores-industriales",
+              lazy: async () => ({
+                Component: (
+                  await import(
+                    "@/app/features/dashboards/anunciantes/sectores-industriales"
+                  )
+                ).default,
+              }),
+            },
+            {
+              path: "anunciantes/sub-sectores-industriales",
+              lazy: async () => ({
+                Component: (
+                  await import(
+                    "@/app/features/dashboards/anunciantes/sub-sectores-industriales"
+                  )
+                ).default,
+              }),
+            },
+            {
+              path: "anunciantes/categorias-anunciantes",
+              lazy: async () => ({
+                Component: (
+                  await import(
+                    "@/app/features/dashboards/anunciantes/categorias-anunciantes"
+                  )
+                ).default,
+              }),
+            },
+            {
+              path: "anunciantes/marcas-productos",
+              lazy: async () => ({
+                Component: (
+                  await import(
+                    "@/app/features/dashboards/anunciantes/marcas-productos"
+                  )
+                ).default,
+              }),
+            },
+            {
+              path: "anunciantes/combos-anunciantes",
+              lazy: async () => ({
+                Component: (
+                  await import(
+                    "@/app/features/dashboards/anunciantes/combos-anunciantes"
+                  )
+                ).default,
+              }),
+            },
+            {
+              path: "anunciantes/marcas-agua",
+              lazy: async () => ({
+                Component: (
+                  await import(
+                    "@/app/features/dashboards/anunciantes/marcas-agua"
+                  )
+                ).default,
+              }),
+            },
+            {
               path: "campanas",
               lazy: async () => ({
                 Component: (await import("@/app/features/dashboards/campanas")).default,

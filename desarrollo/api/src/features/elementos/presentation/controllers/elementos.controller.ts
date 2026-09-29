@@ -1,9 +1,15 @@
 import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { ConflictError, NotFoundError } from '../../../../core/errors/app-error';
+import { ConflictError, NotFoundError, ValidationError } from '../../../../core/errors/app-error';
+import { HttpUploadServiceClient } from '../../../../shared/infrastructure/upload-service/upload-service.client';
 import { getAuthUserId } from '../../../../shared/presentation/get-auth-user-id';
 import { positiveIntIdParam } from '../../../../shared/presentation/schemas';
+import {
+  ImportCatalogosElementosExcelService,
+  ImportCatalogoExcelResult,
+} from '../../application/services/import-catalogos-elementos-excel.service';
+import { ImportElementosExcelService } from '../../application/services/import-elementos-excel.service';
 import { AnularElementoUseCase } from '../../application/use-cases/anular-elemento.use-case';
 import { CreateElementoUseCase } from '../../application/use-cases/create-elemento.use-case';
 import { GetElementoByIdUseCase } from '../../application/use-cases/get-elemento-by-id.use-case';
@@ -55,7 +61,50 @@ export class ElementosController {
     private readonly updateElemento: UpdateElementoUseCase,
     private readonly anularElemento: AnularElementoUseCase,
     private readonly repository: ElementoRepository,
+    private readonly uploadService: HttpUploadServiceClient,
+    private readonly importCatalogosExcel: ImportCatalogosElementosExcelService,
+    private readonly importElementosExcelService: ImportElementosExcelService,
   ) {}
+
+  private sendImportResponse(
+    res: Response,
+    req: Request,
+    uploaded: { id: string; fileName: string; url: string },
+    importResult: ImportCatalogoExcelResult,
+    moduleLabel: string,
+  ): void {
+    res.status(201).json({
+      success: true,
+      message:
+        importResult.importedCount > 0
+          ? `Se importaron ${importResult.importedCount} ${moduleLabel} correctamente`
+          : `No se importaron ${moduleLabel} nuevos`,
+      data: {
+        id: uploaded.id,
+        fileName: uploaded.fileName,
+        originalName: req.file?.originalname,
+        mimeType: req.file?.mimetype,
+        fileSize: req.file?.size,
+        hash: '',
+        url: uploaded.url,
+        importedCount: importResult.importedCount,
+        skippedCount: importResult.skippedCount,
+        duplicates: importResult.duplicates,
+      },
+    });
+  }
+
+  private uploadRequiredFile = async (req: Request): Promise<{ id: string; fileName: string; url: string }> => {
+    if (!req.file) {
+      throw new ValidationError('Archivo requerido');
+    }
+
+    return this.uploadService.uploadFile(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+    );
+  };
 
   private handleCatalogWriteError(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -111,6 +160,69 @@ export class ElementosController {
     const idElemento = Number(req.params.id);
     await this.anularElemento.execute(idElemento, idUsuarioAnula);
     res.status(204).send();
+  };
+
+  importTiposElementosExcel = async (req: Request, res: Response): Promise<void> => {
+    const uploaded = await this.uploadRequiredFile(req);
+    const idUsuario = getAuthUserId(req);
+    const importResult = await this.importCatalogosExcel.importSimple(
+      'tipos-elementos',
+      req.file!.buffer,
+      req.file!.originalname,
+      idUsuario,
+    );
+
+    this.sendImportResponse(res, req, uploaded, importResult, 'tipos de elementos');
+  };
+
+  importOrientacionesExcel = async (req: Request, res: Response): Promise<void> => {
+    const uploaded = await this.uploadRequiredFile(req);
+    const idUsuario = getAuthUserId(req);
+    const importResult = await this.importCatalogosExcel.importSimple(
+      'orientaciones',
+      req.file!.buffer,
+      req.file!.originalname,
+      idUsuario,
+    );
+
+    this.sendImportResponse(res, req, uploaded, importResult, 'orientaciones');
+  };
+
+  importDimensionesExcel = async (req: Request, res: Response): Promise<void> => {
+    const uploaded = await this.uploadRequiredFile(req);
+    const idUsuario = getAuthUserId(req);
+    const importResult = await this.importCatalogosExcel.importSimple(
+      'dimensiones',
+      req.file!.buffer,
+      req.file!.originalname,
+      idUsuario,
+    );
+
+    this.sendImportResponse(res, req, uploaded, importResult, 'dimensiones');
+  };
+
+  importFormatosExcel = async (req: Request, res: Response): Promise<void> => {
+    const uploaded = await this.uploadRequiredFile(req);
+    const idUsuario = getAuthUserId(req);
+    const importResult = await this.importCatalogosExcel.importFormatos(
+      req.file!.buffer,
+      req.file!.originalname,
+      idUsuario,
+    );
+
+    this.sendImportResponse(res, req, uploaded, importResult, 'tipos de formatos');
+  };
+
+  importElementosExcel = async (req: Request, res: Response): Promise<void> => {
+    const uploaded = await this.uploadRequiredFile(req);
+    const idUsuario = getAuthUserId(req);
+    const importResult = await this.importElementosExcelService.execute(
+      req.file!.buffer,
+      req.file!.originalname,
+      idUsuario,
+    );
+
+    this.sendImportResponse(res, req, uploaded, importResult, 'elementos');
   };
 
   listTiposElementos = async (_req: Request, res: Response): Promise<void> => {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { Provincia, ProvinciaFormValues } from "../provincias.types";
-import { provinciasApi } from "../data/provincias.api";
+import { provinciasApi, UploadedExcelFile } from "../data/provincias.api";
 
 function sortProvincias(items: Provincia[]): Provincia[] {
   return [...items].sort((a, b) =>
@@ -57,6 +57,13 @@ export function useProvincias() {
     [loadProvincias],
   );
 
+  const uploadExcel = useCallback(
+    async (file: File): Promise<UploadedExcelFile> => {
+      return provinciasApi.uploadExcel(file);
+    },
+    [],
+  );
+
   return {
     provincias,
     isLoading,
@@ -64,5 +71,6 @@ export function useProvincias() {
     reload: loadProvincias,
     saveProvincia,
     deleteProvincia,
+    uploadExcel,
   };
 }

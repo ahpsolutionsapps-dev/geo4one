@@ -7,6 +7,33 @@ import {
   ProveedorTelefonoFormValues,
 } from "../proveedores.types";
 
+interface ProveedorImportUploadResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    id: string;
+    fileName: string;
+    originalName: string;
+    mimeType: string;
+    fileSize: number;
+    hash: string;
+    url: string;
+    importedCount?: number;
+    skippedCount?: number;
+    duplicates?: string[];
+  };
+}
+
+export interface UploadedProveedoresExcelFile {
+  id: string;
+  fileName: string;
+  originalFileName: string;
+  url: string;
+  importedCount: number;
+  skippedCount: number;
+  duplicates: string[];
+}
+
 interface ProveedorApiModel {
   idProveedor: number;
   proveedor: string;
@@ -174,5 +201,30 @@ export const proveedoresApi = {
 
   async deleteTelefono(idProveedor: string, idTelefono: number): Promise<void> {
     await httpClient.delete(`/proveedores/${idProveedor}/telefonos/${idTelefono}`);
+  },
+
+  async uploadExcel(file: File): Promise<UploadedProveedoresExcelFile> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await httpClient.post<ProveedorImportUploadResponse>(
+      "/proveedores/importar-excel",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    return {
+      id: response.data.data.id,
+      fileName: response.data.data.fileName,
+      originalFileName: response.data.data.originalName,
+      url: response.data.data.url,
+      importedCount: response.data.data.importedCount ?? 0,
+      skippedCount: response.data.data.skippedCount ?? 0,
+      duplicates: response.data.data.duplicates ?? [],
+    };
   },
 };

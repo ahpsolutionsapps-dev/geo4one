@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { sectoresApi } from "../data/sectores.api";
+import {
+  sectoresApi,
+  UploadedSectoresExcelFile,
+} from "../data/sectores.api";
 import { Sector, SectorFormValues } from "../sectores.types";
 
 function sortSectores(items: Sector[]): Sector[] {
@@ -73,6 +76,13 @@ export function useSectores() {
     [loadSectores],
   );
 
+  const uploadExcel = useCallback(
+    async (file: File): Promise<UploadedSectoresExcelFile> => {
+      return sectoresApi.uploadExcel(file);
+    },
+    [],
+  );
+
   return {
     sectores,
     isLoading,
@@ -80,5 +90,6 @@ export function useSectores() {
     reload: loadSectores,
     saveSector,
     deleteSector,
+    uploadExcel,
   };
 }

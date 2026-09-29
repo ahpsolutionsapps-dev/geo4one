@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { Proveedor, ProveedorFormValues } from "../proveedores.types";
-import { proveedoresApi } from "../data/proveedores.api";
+import {
+  proveedoresApi,
+  UploadedProveedoresExcelFile,
+} from "../data/proveedores.api";
 
 function sortProveedores(items: Proveedor[]): Proveedor[] {
   return [...items].sort((a, b) =>
@@ -57,6 +60,13 @@ export function useProveedores() {
     [loadProveedores],
   );
 
+  const uploadExcel = useCallback(
+    async (file: File): Promise<UploadedProveedoresExcelFile> => {
+      return proveedoresApi.uploadExcel(file);
+    },
+    [],
+  );
+
   return {
     proveedores,
     isLoading,
@@ -64,5 +74,6 @@ export function useProveedores() {
     reload: loadProveedores,
     saveProveedor,
     deleteProveedor,
+    uploadExcel,
   };
 }

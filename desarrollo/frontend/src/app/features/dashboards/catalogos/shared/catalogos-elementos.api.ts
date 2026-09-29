@@ -16,6 +16,33 @@ interface ItemResponse<T> {
   item: T;
 }
 
+interface CatalogImportUploadResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    id: string;
+    fileName: string;
+    originalName: string;
+    mimeType: string;
+    fileSize: number;
+    hash: string;
+    url: string;
+    importedCount?: number;
+    skippedCount?: number;
+    duplicates?: string[];
+  };
+}
+
+export interface UploadedCatalogoExcelFile {
+  id: string;
+  fileName: string;
+  originalFileName: string;
+  url: string;
+  importedCount: number;
+  skippedCount: number;
+  duplicates: string[];
+}
+
 interface CatalogoSimpleApiModel {
   id: number;
   nombre: string;
@@ -51,7 +78,19 @@ function mapFormatoItem(item: FormatoCatalogoApiModel): FormatoCatalogoItem {
   };
 }
 
-function buildSimpleCatalogApi(endpoint: string) {
+function mapUploadResponse(response: CatalogImportUploadResponse): UploadedCatalogoExcelFile {
+  return {
+    id: response.data.id,
+    fileName: response.data.fileName,
+    originalFileName: response.data.originalName,
+    url: response.data.url,
+    importedCount: response.data.importedCount ?? 0,
+    skippedCount: response.data.skippedCount ?? 0,
+    duplicates: response.data.duplicates ?? [],
+  };
+}
+
+function buildSimpleCatalogApi(endpoint: string, importEndpoint?: string) {
   return {
     async list(): Promise<CatalogoSimpleItem[]> {
       const response = await httpClient.get<ListResponse<CatalogoSimpleApiModel>>(endpoint);
@@ -81,13 +120,43 @@ function buildSimpleCatalogApi(endpoint: string) {
     async remove(id: string): Promise<void> {
       await httpClient.delete(`${endpoint}/${id}`);
     },
+
+    async uploadExcel(file: File): Promise<UploadedCatalogoExcelFile> {
+      if (!importEndpoint) {
+        throw new Error("La importacion no esta habilitada para este catalogo");
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await httpClient.post<CatalogImportUploadResponse>(
+        importEndpoint,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      return mapUploadResponse(response.data);
+    },
   };
 }
 
 export const catalogosElementosApi = {
-  tiposElementos: buildSimpleCatalogApi("/elementos/catalogos/tipos-elementos"),
-  orientaciones: buildSimpleCatalogApi("/elementos/catalogos/orientaciones"),
-  dimensiones: buildSimpleCatalogApi("/elementos/catalogos/dimensiones"),
+  tiposElementos: buildSimpleCatalogApi(
+    "/elementos/catalogos/tipos-elementos",
+    "/elementos/catalogos/tipos-elementos/importar-excel",
+  ),
+  orientaciones: buildSimpleCatalogApi(
+    "/elementos/catalogos/orientaciones",
+    "/elementos/catalogos/orientaciones/importar-excel",
+  ),
+  dimensiones: buildSimpleCatalogApi(
+    "/elementos/catalogos/dimensiones",
+    "/elementos/catalogos/dimensiones/importar-excel",
+  ),
 
   async getTiposElementosOptions(): Promise<TipoElementoOption[]> {
     const response = await httpClient.get<ListResponse<CatalogoSimpleApiModel>>(
@@ -134,5 +203,22 @@ export const catalogosElementosApi = {
 
   async removeFormato(id: string): Promise<void> {
     await httpClient.delete(`/elementos/catalogos/tipos-formatos/${id}`);
+  },
+
+  async uploadFormatosExcel(file: File): Promise<UploadedCatalogoExcelFile> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await httpClient.post<CatalogImportUploadResponse>(
+      "/elementos/catalogos/tipos-formatos/importar-excel",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    return mapUploadResponse(response.data);
   },
 };

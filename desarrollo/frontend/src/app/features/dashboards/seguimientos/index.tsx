@@ -1,5 +1,12 @@
-import BlankPage from "@/app/features/dashboards/BlankPage";
+import ColocacionesPage from "@/app/features/dashboards/colocaciones";
 
 export default function SeguimientosPage() {
-  return <BlankPage title="Seguimientos" description="Seguimiento de colocaciones." />;
+  return (
+    <ColocacionesPage
+      pageTitle="Seguimientos"
+      entityLabel="seguimiento"
+      entityPluralLabel="seguimientos"
+      apiBasePath="/seguimientos"
+    />
+  );
 }

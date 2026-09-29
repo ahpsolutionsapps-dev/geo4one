@@ -2,6 +2,33 @@ import { httpClient } from "@/shared/api/http-client";
 
 import { Provincia, ProvinciaFormValues } from "../provincias.types";
 
+interface ProvinciaImportUploadResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    id: string;
+    fileName: string;
+    originalName: string;
+    mimeType: string;
+    fileSize: number;
+    hash: string;
+    url: string;
+    importedCount?: number;
+    skippedCount?: number;
+    duplicates?: string[];
+  };
+}
+
+export interface UploadedExcelFile {
+  id: string;
+  fileName: string;
+  originalFileName: string;
+  url: string;
+  importedCount: number;
+  skippedCount: number;
+  duplicates: string[];
+}
+
 interface ProvinciaApiModel {
   idProvincia: number;
   provincia: string;
@@ -70,5 +97,30 @@ export const provinciasApi = {
 
   async deleteProvincia(id: string): Promise<void> {
     await httpClient.delete(`/provincias/${id}`);
+  },
+
+  async uploadExcel(file: File): Promise<UploadedExcelFile> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await httpClient.post<ProvinciaImportUploadResponse>(
+      "/provincias/importar-excel",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    return {
+      id: response.data.data.id,
+      fileName: response.data.data.fileName,
+      originalFileName: response.data.data.originalName,
+      url: response.data.data.url,
+      importedCount: response.data.data.importedCount ?? 0,
+      skippedCount: response.data.data.skippedCount ?? 0,
+      duplicates: response.data.data.duplicates ?? [],
+    };
   },
 };

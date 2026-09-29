@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { municipiosApi } from "../data/municipios.api";
+import {
+  municipiosApi,
+  UploadedMunicipiosExcelFile,
+} from "../data/municipios.api";
 import { Municipio, MunicipioFormValues } from "../municipios.types";
 
 function sortMunicipios(items: Municipio[]): Municipio[] {
@@ -63,6 +66,13 @@ export function useMunicipios() {
     [loadMunicipios],
   );
 
+  const uploadExcel = useCallback(
+    async (file: File): Promise<UploadedMunicipiosExcelFile> => {
+      return municipiosApi.uploadExcel(file);
+    },
+    [],
+  );
+
   return {
     municipios,
     isLoading,
@@ -70,5 +80,6 @@ export function useMunicipios() {
     reload: loadMunicipios,
     saveMunicipio,
     deleteMunicipio,
+    uploadExcel,
   };
 }

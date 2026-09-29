@@ -192,6 +192,7 @@ model Elementos {
   FechaActualizacion DateTime         @default(now()) @db.Timestamptz(6)
   CreadoPor          BigInt?
   ActualizadoPor     BigInt?
+  Colocaciones       Colocaciones[]
   Formatos           Formatos?        @relation(fields: [IdFormato], references: [IdFormato], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_Formatos")
   Municipios         Municipios?      @relation(fields: [IdMunicipio], references: [IdMunicipio], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_Municipios")
   Orientaciones      Orientaciones?   @relation(fields: [IdOrientacion], references: [IdOrientacion], onDelete: NoAction, onUpdate: NoAction, map: "FK_Elementos_Orientaciones")
@@ -501,6 +502,7 @@ model PeriodosColocacion {
   FechaActualizacion   DateTime @default(now()) @db.Timestamptz(6)
   CreadoPor            BigInt?
   ActualizadoPor       BigInt?
+  Colocaciones         Colocaciones[]
 
   @@index([FechaInicial, FechaFinal], map: "IX_PeriodosColocacion_Fechas")
 }
@@ -552,6 +554,7 @@ model VersionesCampanas {
   FechaActualizacion          DateTime                      @default(now()) @db.Timestamptz(6)
   CreadoPor                   BigInt?
   ActualizadoPor              BigInt?
+  Colocaciones                Colocaciones[]
   FirmasMarcasAguaSeguimiento FirmasMarcasAguaSeguimiento[]
   Anunciantes                 Anunciantes                   @relation(fields: [IdAnunciante], references: [IdAnunciante], onDelete: NoAction, onUpdate: NoAction, map: "FK_VersionesCampanas_Anunciantes")
   CombosAnunciantes           CombosAnunciantes?            @relation(fields: [IdComboAnunciante], references: [IdComboAnunciante], onDelete: NoAction, onUpdate: NoAction, map: "FK_VersionesCampanas_CombosAnunciantes")
@@ -561,4 +564,30 @@ model VersionesCampanas {
   @@index([IdComboAnunciante], map: "IX_VersionesCampanas_IdComboAnunciante")
   @@index([IdMarcaProducto], map: "IX_VersionesCampanas_IdMarcaProducto")
   @@index([VersionCampana], map: "IX_VersionesCampanas_VersionCampana")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model Colocaciones {
+  IdColocacion         BigInt             @id @default(autoincrement())
+  CodigoSeguimiento    String             @unique(map: "UQ_Colocaciones_CodigoSeguimiento") @db.VarChar(50)
+  IdElemento           BigInt
+  IdVersionCampana     BigInt
+  IdPeriodoColocacion  BigInt
+  Observaciones        String?
+  Activo               Boolean            @default(true)
+  Anulado              Boolean            @default(false)
+  AnuladoPor           BigInt?
+  ComentarioAnulado    String?            @db.VarChar(500)
+  FechaAnulacion       DateTime?          @db.Timestamptz(6)
+  FechaCreacion        DateTime           @default(now()) @db.Timestamptz(6)
+  FechaActualizacion   DateTime           @default(now()) @db.Timestamptz(6)
+  CreadoPor            BigInt?
+  ActualizadoPor       BigInt?
+  Elementos            Elementos          @relation(fields: [IdElemento], references: [IdElemento], onDelete: NoAction, onUpdate: NoAction, map: "FK_Colocaciones_Elementos")
+  VersionesCampanas    VersionesCampanas  @relation(fields: [IdVersionCampana], references: [IdVersionCampana], onDelete: NoAction, onUpdate: NoAction, map: "FK_Colocaciones_VersionesCampanas")
+  PeriodosColocacion   PeriodosColocacion @relation(fields: [IdPeriodoColocacion], references: [IdPeriodoColocacion], onDelete: NoAction, onUpdate: NoAction, map: "FK_Colocaciones_PeriodosColocacion")
+
+  @@index([IdElemento], map: "IX_Colocaciones_IdElemento")
+  @@index([IdVersionCampana], map: "IX_Colocaciones_IdVersionCampana")
+  @@index([IdPeriodoColocacion], map: "IX_Colocaciones_IdPeriodoColocacion")
 }

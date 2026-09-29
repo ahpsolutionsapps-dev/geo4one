@@ -75,12 +75,18 @@ export function useFormatos() {
     [loadData],
   );
 
+  const uploadExcel = useCallback(async (file: File) => {
+    return catalogosElementosApi.uploadFormatosExcel(file);
+  }, []);
+
   return {
     formatos,
     tiposElementos,
     isLoading,
     errorMessage,
+    reload: loadData,
     saveFormato,
     deleteFormato,
+    uploadExcel,
   };
 }

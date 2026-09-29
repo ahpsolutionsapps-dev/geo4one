@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { NotFoundError } from '../../../../core/errors/app-error';
+import { HttpUploadServiceClient } from '../../../../shared/infrastructure/upload-service/upload-service.client';
 import { getAuthUserId } from '../../../../shared/presentation/get-auth-user-id';
+import { ImportProveedoresExcelService } from '../../application/services/import-proveedores-excel.service';
 import { ProveedorRepository } from '../../domain/repositories/proveedor-repository';
 import { CreateProveedorUseCase } from '../../application/use-cases/create-proveedor.use-case';
 import { DeactivateProveedorUseCase } from '../../application/use-cases/deactivate-proveedor.use-case';
@@ -24,6 +26,8 @@ export class ProveedoresController {
     private readonly updateProveedor: UpdateProveedorUseCase,
     private readonly deactivateProveedor: DeactivateProveedorUseCase,
     private readonly proveedorRepository: ProveedorRepository,
+    private readonly uploadService: HttpUploadServiceClient,
+    private readonly importProveedoresExcel: ImportProveedoresExcelService,
   ) {}
 
   list = async (_req: Request, res: Response): Promise<void> => {
@@ -85,6 +89,46 @@ export class ProveedoresController {
     const params = proveedorIdParamsSchema.parse(req.params);
     await this.deactivateProveedor.execute(params.id, idUsuario);
     res.status(204).send();
+  };
+
+  importExcel = async (req: Request, res: Response): Promise<void> => {
+    if (!req.file) {
+      res.status(400).json({ success: false, message: 'Archivo requerido' });
+      return;
+    }
+
+    const idUsuario = getAuthUserId(req);
+    const uploaded = await this.uploadService.uploadFile(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+    );
+
+    const importResult = await this.importProveedoresExcel.execute(
+      req.file.buffer,
+      req.file.originalname,
+      idUsuario,
+    );
+
+    res.status(201).json({
+      success: true,
+      message:
+        importResult.importedCount > 0
+          ? `Se importaron ${importResult.importedCount} suplidores correctamente`
+          : 'No se importaron suplidores nuevos',
+      data: {
+        id: uploaded.id,
+        fileName: uploaded.fileName,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        hash: '',
+        url: uploaded.url,
+        importedCount: importResult.importedCount,
+        skippedCount: importResult.skippedCount,
+        duplicates: importResult.duplicates,
+      },
+    });
   };
 
   listTelefonos = async (req: Request, res: Response): Promise<void> => {
