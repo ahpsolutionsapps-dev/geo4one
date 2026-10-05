@@ -2,6 +2,7 @@ import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import {
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
@@ -18,7 +19,7 @@ import {
   TableSortIcon,
 } from "@/components/shared/table";
 import { Page } from "@/components/shared/Page";
-import { Button, Card, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
+import { Button, Card, Select, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
 
 import { createMunicipiosColumns } from "./components/municipios-table.columns";
 import { MunicipiosFormModal } from "./components/MunicipiosFormModal";
@@ -40,12 +41,33 @@ export default function MunicipiosPage() {
     { id: "provinciaNombre", desc: false },
     { id: "municipio", desc: false },
   ]);
+  const [selectedProvinceId, setSelectedProvinceId] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [selectedMunicipio, setSelectedMunicipio] = useState<Municipio | null>(null);
   const [municipioToDelete, setMunicipioToDelete] = useState<Municipio | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const provinceOptions = useMemo(() => {
+    const provinces = new Map<number, string>();
+    municipios.forEach((item) => provinces.set(item.idProvincia, item.provinciaNombre));
+
+    return [
+      { label: "Todas las provincias", value: "" },
+      ...Array.from(provinces.entries())
+        .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB, "es"))
+        .map(([id, name]) => ({ label: name, value: String(id) })),
+    ];
+  }, [municipios]);
+
+  const filteredMunicipios = useMemo(
+    () =>
+      selectedProvinceId
+        ? municipios.filter((item) => String(item.idProvincia) === selectedProvinceId)
+        : municipios,
+    [municipios, selectedProvinceId],
+  );
 
   const columns = useMemo(
     () =>
@@ -60,13 +82,14 @@ export default function MunicipiosPage() {
   );
 
   const table = useReactTable({
-    data: municipios,
+    data: filteredMunicipios,
     columns,
     state: {
       sorting,
     },
     enableSorting: true,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -161,9 +184,19 @@ export default function MunicipiosPage() {
               title="Municipios"
               createLabel="Nuevo municipio"
               createTitle="Nuevo municipio"
-              showSearch={false}
+              searchPlaceholder="Buscar municipio o provincia..."
+              showSearch={true}
               table={table}
               onCreate={handleCreate}
+              tableConfig={
+                <Select
+                  aria-label="Filtrar por provincia"
+                  className="h-9 min-w-48"
+                  data={provinceOptions}
+                  value={selectedProvinceId}
+                  onChange={(event) => setSelectedProvinceId(event.target.value)}
+                />
+              }
               extraActions={
                 <>
                   <input

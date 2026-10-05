@@ -1,0 +1,1 @@
+{"version":3,"file":"rol-list-item.js","sourceRoot":"","sources":["../../../../../src/features/roles/domain/entities/rol-list-item.ts"],"names":[],"mappings":";;;AASA,MAAa,WAAW;IACO;IAA7B,YAA6B,KAAuB;QAAvB,UAAK,GAAL,KAAK,CAAkB;IAAG,CAAC;IAExD,YAAY;QACV,OAAO,EAAE,GAAG,IAAI,CAAC,KAAK,EAAE,CAAC;IAC3B,CAAC;CACF;AAND,kCAMC"}

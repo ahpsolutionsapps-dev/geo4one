@@ -15,7 +15,9 @@ export async function checkStockThresholds(
     idUsuarioOrigen?: number | null;
   },
 ): Promise<void> {
-  const producto = await prisma.productos.findUnique({
+  const prismaAny = prisma as any;
+
+  const producto = await prismaAny.productos.findUnique({
     where: { IdProducto: params.idProducto },
     select: {
       Nombre: true,

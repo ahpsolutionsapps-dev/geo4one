@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 export type NaturalezaMovimientoCatalogo = 'E' | 'S';
 
@@ -76,7 +76,7 @@ const AJUSTE_NOMBRE_CANONICO: Record<string, string> = {
   'ajuste negativo': TIPO_AJUSTE_NOMBRE_NEG,
 };
 
-export function buildAjusteTipoWhere(): Prisma.TiposMovimientoInventarioWhereInput {
+export function buildAjusteTipoWhere(): Record<string, any> {
   return {
     Anulado: false,
     OR: [
@@ -95,7 +95,9 @@ export function buildAjusteTipoWhere(): Prisma.TiposMovimientoInventarioWhereInp
 }
 
 type TiposMovimientoTx = {
-  tiposMovimientoInventario: PrismaClient['tiposMovimientoInventario'];
+  tiposMovimientoInventario: {
+    findFirst: (args: any) => Promise<any>;
+  };
 };
 
 const tipoAjusteSelect = {
@@ -182,7 +184,11 @@ export async function resolveTipoAjusteInventario(
   return null;
 }
 
-type PrismaClientLike = Pick<PrismaClient, 'tiposMovimientoInventario'>;
+type PrismaClientLike = PrismaClient & {
+  tiposMovimientoInventario: {
+    findMany: (args: any) => Promise<any[]>;
+  };
+};
 
 export async function findTiposMovimientoCatalog(
   prisma: PrismaClientLike,

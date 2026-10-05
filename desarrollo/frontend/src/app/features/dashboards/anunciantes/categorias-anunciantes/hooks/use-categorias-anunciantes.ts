@@ -76,6 +76,10 @@ export function useCategoriasAnunciantes() {
     [loadCategoriasAnunciantes],
   );
 
+  const uploadExcel = useCallback(async (file: File) => {
+    return categoriasAnunciantesApi.uploadExcel(file);
+  }, []);
+
   return {
     categoriasAnunciantes,
     isLoading,
@@ -83,5 +87,6 @@ export function useCategoriasAnunciantes() {
     reload: loadCategoriasAnunciantes,
     saveCategoriaAnunciante,
     deleteCategoriaAnunciante,
+    uploadExcel,
   };
 }

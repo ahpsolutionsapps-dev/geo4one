@@ -1,0 +1,1 @@
+{"version":3,"file":"sync-cursor.js","sourceRoot":"","sources":["../../../src/shared/sync/sync-cursor.ts"],"names":[],"mappings":";;;AAOA,8CAEC;AAJY,QAAA,qBAAqB,GAAG,EAAE,CAAC;AAExC,SAAgB,iBAAiB,CAAC,IAAI,GAAG,6BAAqB;IAC5D,OAAO,IAAI,IAAI,CAAC,IAAI,CAAC,GAAG,EAAE,GAAG,IAAI,GAAG,EAAE,GAAG,EAAE,GAAG,EAAE,GAAG,IAAI,CAAC,CAAC;AAC3D,CAAC"}

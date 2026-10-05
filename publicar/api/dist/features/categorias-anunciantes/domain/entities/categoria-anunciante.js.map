@@ -1,0 +1,1 @@
+{"version":3,"file":"categoria-anunciante.js","sourceRoot":"","sources":["../../../../../src/features/categorias-anunciantes/domain/entities/categoria-anunciante.ts"],"names":[],"mappings":";;;AAcA,MAAa,mBAAmB;IACD;IAA7B,YAA6B,KAA+B;QAA/B,UAAK,GAAL,KAAK,CAA0B;IAAG,CAAC;IAEhE,YAAY;QACV,OAAO,EAAE,GAAG,IAAI,CAAC,KAAK,EAAE,CAAC;IAC3B,CAAC;CACF;AAND,kDAMC"}

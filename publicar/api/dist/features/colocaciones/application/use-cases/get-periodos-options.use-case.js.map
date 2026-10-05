@@ -1,0 +1,1 @@
+{"version":3,"file":"get-periodos-options.use-case.js","sourceRoot":"","sources":["../../../../../src/features/colocaciones/application/use-cases/get-periodos-options.use-case.ts"],"names":[],"mappings":";;;AAKA,MAAa,yBAAyB;IACP;IAA7B,YAA6B,YAAkC;QAAlC,iBAAY,GAAZ,YAAY,CAAsB;IAAG,CAAC;IAEnE,KAAK,CAAC,OAAO;QACX,OAAO,IAAI,CAAC,YAAY,CAAC,mBAAmB,EAAE,CAAC;IACjD,CAAC;CACF;AAND,8DAMC"}

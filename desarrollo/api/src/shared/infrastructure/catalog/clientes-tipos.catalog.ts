@@ -9,7 +9,11 @@ export interface ClienteTipoCatalogItem {
   orden: number;
 }
 
-type PrismaClientLike = Pick<PrismaClient, 'clientesTipos'>;
+type PrismaClientLike = PrismaClient & {
+  clientesTipos: {
+    findMany: (args: any) => Promise<any[]>;
+  };
+};
 
 export async function findClientesTiposCatalog(
   prisma: PrismaClientLike,

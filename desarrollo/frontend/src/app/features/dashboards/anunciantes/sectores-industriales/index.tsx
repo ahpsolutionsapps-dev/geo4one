@@ -1,3 +1,4 @@
+import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import {
   flexRender,
   getCoreRowModel,
@@ -7,7 +8,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import clsx from "clsx";
-import { useCallback, useMemo, useState } from "react";
+import { ChangeEvent, useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
@@ -17,7 +18,7 @@ import {
   TableSortIcon,
 } from "@/components/shared/table";
 import { Page } from "@/components/shared/Page";
-import { Card, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
+import { Button, Card, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
 
 import { createSectoresIndustrialesColumns } from "./components/sectores-industriales-table.columns";
 import { SectoresIndustrialesFormModal } from "./components/SectoresIndustrialesFormModal";
@@ -32,8 +33,10 @@ export default function SectoresIndustrialesPage() {
     sectoresIndustriales,
     isLoading,
     errorMessage,
+    reload,
     saveSectorIndustrial,
     deleteSectorIndustrial,
+    uploadExcel,
   } = useSectoresIndustriales();
 
   const [sorting, setSorting] = useState<SortingState>([{ id: "sectorIndustrial", desc: false }]);
@@ -41,6 +44,8 @@ export default function SectoresIndustrialesPage() {
   const [selectedSectorIndustrial, setSelectedSectorIndustrial] = useState<SectorIndustrial | null>(null);
   const [sectorIndustrialToDelete, setSectorIndustrialToDelete] = useState<SectorIndustrial | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const columns = useMemo(
     () =>
@@ -99,6 +104,47 @@ export default function SectoresIndustrialesPage() {
     }
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportExcel = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const validFileExtension = /\.(xlsx|xls)$/i.test(file.name);
+
+    if (!validFileExtension) {
+      toast.error("Selecciona un archivo Excel (.xlsx o .xls)");
+      return;
+    }
+
+    setImportLoading(true);
+
+    try {
+      const uploadedFile = await uploadExcel(file);
+      const duplicatedMessage =
+        uploadedFile.skippedCount > 0
+          ? `; ${uploadedFile.skippedCount} filas se omitieron`
+          : "";
+
+      toast.success(
+        `Archivo "${uploadedFile.originalFileName}" importado. ${uploadedFile.importedCount} sectores nuevos cargados${duplicatedMessage}`,
+      );
+      await reload();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo importar el archivo",
+      );
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   return (
     <Page title="Sectores Industriales">
       <div className="transition-content pt-3 flex h-full min-h-0 w-full flex-col pb-5 supports-[height:1dvh]:min-h-[calc(100dvh-4.5rem)]">
@@ -116,6 +162,29 @@ export default function SectoresIndustrialesPage() {
             showSearch={false}
             table={table}
             onCreate={handleCreate}
+            extraActions={
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  className="hidden"
+                  onChange={handleImportExcel}
+                />
+
+                <Button
+                  type="button"
+                  variant="outlined"
+                  className="h-9 gap-1.5"
+                  onClick={handleImportClick}
+                  disabled={importLoading}
+                  title="Importar sectores industriales desde archivo Excel"
+                >
+                  <ArrowUpTrayIcon className="size-4" />
+                  <span>{importLoading ? "Importando..." : "Importar Excel"}</span>
+                </Button>
+              </>
+            }
             actionsPreset="primary"
             showPrint={false}
             showExport={false}

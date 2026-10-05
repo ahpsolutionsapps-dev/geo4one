@@ -1,0 +1,4 @@
+// Legacy snapshot kept for reference only.
+// This file is intentionally archived because the active Prisma schema is
+// prisma/schema.prisma and having both schema files in the same folder causes
+// duplicate generator/source/model diagnostics in VS Code.

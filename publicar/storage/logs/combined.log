@@ -1,0 +1,9 @@
+{"level":"info","message":"Aplicación configurada","port":4000,"timestamp":"2026-10-01T22:31:58.795Z"}
+{"level":"info","message":"Upload Service [production] escuchando en http://localhost:4000","timestamp":"2026-10-01T22:31:58.800Z"}
+{"error":{"clientVersion":"6.19.3","name":"PrismaClientInitializationError"},"level":"error","message":"Error no controlado","timestamp":"2026-10-01T22:32:11.783Z"}
+{"level":"info","message":"Aplicación configurada","port":4000,"timestamp":"2026-10-02T01:07:39.872Z"}
+{"level":"info","message":"Upload Service [production] escuchando en http://localhost:4000","timestamp":"2026-10-02T01:07:39.878Z"}
+{"error":{"clientVersion":"6.19.3","name":"PrismaClientInitializationError"},"level":"error","message":"Error no controlado","timestamp":"2026-10-02T01:07:46.642Z"}
+{"level":"info","message":"Aplicación configurada","port":4000,"timestamp":"2026-10-02T01:08:14.503Z"}
+{"level":"info","message":"Upload Service [production] escuchando en http://localhost:4000","timestamp":"2026-10-02T01:08:14.510Z"}
+{"error":{"clientVersion":"6.19.3","name":"PrismaClientInitializationError"},"level":"error","message":"Error no controlado","timestamp":"2026-10-02T01:08:26.075Z"}

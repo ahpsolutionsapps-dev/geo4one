@@ -25,6 +25,33 @@ interface SubSectorIndustrialItemResponse {
   item: SubSectorIndustrialApiModel;
 }
 
+interface SubSectorIndustrialImportUploadResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    id: string;
+    fileName: string;
+    originalName: string;
+    mimeType: string;
+    fileSize: number;
+    hash: string;
+    url: string;
+    importedCount?: number;
+    skippedCount?: number;
+    duplicates?: string[];
+  };
+}
+
+export interface UploadedSubSectorIndustrialExcelFile {
+  id: string;
+  fileName: string;
+  originalFileName: string;
+  url: string;
+  importedCount: number;
+  skippedCount: number;
+  duplicates: string[];
+}
+
 function mapSubSectorIndustrialFromApi(item: SubSectorIndustrialApiModel): SubSectorIndustrial {
   return {
     id: String(item.idSubSectorIndustrial),
@@ -84,5 +111,30 @@ export const subSectoresIndustrialesApi = {
 
   async deleteSubSectorIndustrial(id: string): Promise<void> {
     await httpClient.delete(`/sub-sectores-industriales/${id}`);
+  },
+
+  async uploadExcel(file: File): Promise<UploadedSubSectorIndustrialExcelFile> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await httpClient.post<SubSectorIndustrialImportUploadResponse>(
+      "/sub-sectores-industriales/importar-excel",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    return {
+      id: response.data.data.id,
+      fileName: response.data.data.fileName,
+      originalFileName: response.data.data.originalName,
+      url: response.data.data.url,
+      importedCount: response.data.data.importedCount ?? 0,
+      skippedCount: response.data.data.skippedCount ?? 0,
+      duplicates: response.data.data.duplicates ?? [],
+    };
   },
 };

@@ -69,6 +69,10 @@ export function useMarcasProductos() {
     [loadMarcasProductos],
   );
 
+  const uploadExcel = useCallback(async (file: File) => {
+    return marcasProductosApi.uploadExcel(file);
+  }, []);
+
   return {
     marcasProductos,
     isLoading,
@@ -76,5 +80,6 @@ export function useMarcasProductos() {
     reload: loadMarcasProductos,
     saveMarcaProducto,
     deleteMarcaProducto,
+    uploadExcel,
   };
 }

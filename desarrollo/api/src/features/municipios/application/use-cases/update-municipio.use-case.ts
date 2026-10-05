@@ -27,8 +27,10 @@ export class UpdateMunicipioUseCase {
       throw new NotFoundError('Municipio no encontrado');
     }
 
-    const nextProvincia = input.idProvincia ?? existing.idProvincia;
-    const nextMunicipio = input.municipio?.trim() ?? existing.municipio;
+    const existingProps = existing.toPrimitives();
+
+    const nextProvincia = input.idProvincia ?? existingProps.idProvincia;
+    const nextMunicipio = input.municipio?.trim() ?? existingProps.municipio;
 
     if (input.idProvincia !== undefined) {
       const province = await this.provincias.findById(input.idProvincia);
@@ -46,8 +48,8 @@ export class UpdateMunicipioUseCase {
     }
 
     const updated = await this.municipios.update(idMunicipio, {
-      idProvincia: input.idProvincia,
-      municipio: input.municipio?.trim(),
+      idProvincia: nextProvincia,
+      municipio: nextMunicipio,
       latitud: input.latitud,
       longitud: input.longitud,
       activo: input.activo,

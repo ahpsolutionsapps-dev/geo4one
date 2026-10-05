@@ -52,7 +52,7 @@ export const env = {
   isProduction: runtimeEnv === 'production',
   isDevelopment: runtimeEnv === 'development',
   port: Number(process.env.PORT ?? 4000),
-  databaseUrl: required('DATABASE_URL', 'file:./database/upload-service.db'),
+  databaseUrl: required('DATABASE_URL'),
   storagePath: required('STORAGE_PATH', './storage'),
   maxFileSize: Number(process.env.MAX_FILE_SIZE ?? 10 * 1024 * 1024),
   allowedExtensions: parseList(

@@ -186,18 +186,27 @@ async function relayWebrtcSignal(
     return;
   }
 
-  const participants = await prisma.chatParticipante.findMany({
-    where: { idConversacion, anulado: false },
-    select: { idUsuario: true, idCliente: true },
-  });
+  const prismaChat = prisma as any;
+
+  const participants: Array<{ idUsuario: number | null; idCliente: number | null }> =
+    await prismaChat.chatParticipante.findMany({
+      where: { idConversacion, anulado: false },
+      select: { idUsuario: true, idCliente: true },
+    });
   if (participants.length === 0) {
     return;
   }
 
   const isParticipant =
     sender.actor === 'cliente'
-      ? participants.some((item) => item.idCliente === sender.clienteId)
-      : participants.some((item) => item.idUsuario === sender.userId);
+      ? participants.some(
+          (item: { idUsuario: number | null; idCliente: number | null }) =>
+            item.idCliente === sender.clienteId,
+        )
+      : participants.some(
+          (item: { idUsuario: number | null; idCliente: number | null }) =>
+            item.idUsuario === sender.userId,
+        );
   if (!isParticipant) {
     return;
   }
@@ -213,11 +222,11 @@ async function relayWebrtcSignal(
   };
 
   const userIds = participants
-    .map((item) => item.idUsuario)
-    .filter((id): id is number => id != null && id !== sender.userId);
+    .map((item: { idUsuario: number | null; idCliente: number | null }) => item.idUsuario)
+    .filter((id: number | null): id is number => id != null && id !== sender.userId);
   const clienteIds = participants
-    .map((item) => item.idCliente)
-    .filter((id): id is number => id != null && id !== sender.clienteId);
+    .map((item: { idUsuario: number | null; idCliente: number | null }) => item.idCliente)
+    .filter((id: number | null): id is number => id != null && id !== sender.clienteId);
 
   for (const userId of new Set(userIds)) {
     broadcastEvent(wss, {

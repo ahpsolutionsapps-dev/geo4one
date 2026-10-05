@@ -1,104 +1,118 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateTable
 CREATE TABLE "Files" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "Id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "FileName" TEXT NOT NULL,
     "OriginalFileName" TEXT NOT NULL,
     "Extension" TEXT NOT NULL,
     "MimeType" TEXT NOT NULL,
-    "FileSize" INTEGER NOT NULL,
+    "FileSize" BIGINT NOT NULL,
     "StoragePath" TEXT NOT NULL,
     "Hash" TEXT,
-    "IsPublic" INTEGER NOT NULL DEFAULT 0,
-    "CreatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "UpdatedAt" DATETIME,
-    "DeletedAt" DATETIME
+    "IsPublic" BOOLEAN NOT NULL DEFAULT false,
+    "CreatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "UpdatedAt" TIMESTAMPTZ(6),
+    "DeletedAt" TIMESTAMPTZ(6),
+
+    CONSTRAINT "Files_pkey" PRIMARY KEY ("Id")
 );
 
 -- CreateTable
 CREATE TABLE "FileRelations" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "FileId" TEXT NOT NULL,
+    "Id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "FileId" UUID NOT NULL,
     "EntityType" TEXT NOT NULL,
     "EntityId" TEXT NOT NULL,
-    "CreatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "FileRelations_FileId_fkey" FOREIGN KEY ("FileId") REFERENCES "Files" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "CreatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "FileRelations_pkey" PRIMARY KEY ("Id")
 );
 
 -- CreateTable
 CREATE TABLE "FileCategories" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "Id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "Name" TEXT NOT NULL,
-    "Description" TEXT
+    "Description" TEXT,
+
+    CONSTRAINT "FileCategories_pkey" PRIMARY KEY ("Id")
 );
 
 -- CreateTable
 CREATE TABLE "FileCategoryRelations" (
-    "FileId" TEXT NOT NULL,
-    "CategoryId" TEXT NOT NULL,
+    "FileId" UUID NOT NULL,
+    "CategoryId" UUID NOT NULL,
 
-    PRIMARY KEY ("FileId", "CategoryId"),
-    CONSTRAINT "FileCategoryRelations_FileId_fkey" FOREIGN KEY ("FileId") REFERENCES "Files" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "FileCategoryRelations_CategoryId_fkey" FOREIGN KEY ("CategoryId") REFERENCES "FileCategories" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "FileCategoryRelations_pkey" PRIMARY KEY ("FileId","CategoryId")
 );
 
 -- CreateTable
 CREATE TABLE "FileVersions" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "FileId" TEXT NOT NULL,
+    "Id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "FileId" UUID NOT NULL,
     "VersionNumber" INTEGER NOT NULL,
     "StoragePath" TEXT NOT NULL,
-    "FileSize" INTEGER NOT NULL,
-    "CreatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "FileVersions_FileId_fkey" FOREIGN KEY ("FileId") REFERENCES "Files" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "FileSize" BIGINT NOT NULL,
+    "CreatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "FileVersions_pkey" PRIMARY KEY ("Id")
 );
 
 -- CreateTable
 CREATE TABLE "Tags" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "Name" TEXT NOT NULL
+    "Id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "Name" TEXT NOT NULL,
+
+    CONSTRAINT "Tags_pkey" PRIMARY KEY ("Id")
 );
 
 -- CreateTable
 CREATE TABLE "FileTags" (
-    "FileId" TEXT NOT NULL,
-    "TagId" TEXT NOT NULL,
+    "FileId" UUID NOT NULL,
+    "TagId" UUID NOT NULL,
 
-    PRIMARY KEY ("FileId", "TagId"),
-    CONSTRAINT "FileTags_FileId_fkey" FOREIGN KEY ("FileId") REFERENCES "Files" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "FileTags_TagId_fkey" FOREIGN KEY ("TagId") REFERENCES "Tags" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "FileTags_pkey" PRIMARY KEY ("FileId","TagId")
 );
 
 -- CreateTable
 CREATE TABLE "ApiKeys" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "Id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "Name" TEXT NOT NULL,
     "ApiKey" TEXT NOT NULL,
-    "IsActive" INTEGER NOT NULL DEFAULT 1,
-    "CreatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "LastUsedAt" DATETIME
+    "IsActive" BOOLEAN NOT NULL DEFAULT true,
+    "CreatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "LastUsedAt" TIMESTAMPTZ(6),
+
+    CONSTRAINT "ApiKeys_pkey" PRIMARY KEY ("Id")
 );
 
 -- CreateTable
 CREATE TABLE "SignedUrls" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "FileId" TEXT NOT NULL,
+    "Id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "FileId" UUID NOT NULL,
     "Token" TEXT NOT NULL,
-    "ExpiresAt" DATETIME NOT NULL,
-    "CreatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "SignedUrls_FileId_fkey" FOREIGN KEY ("FileId") REFERENCES "Files" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "ExpiresAt" TIMESTAMPTZ(6) NOT NULL,
+    "CreatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "SignedUrls_pkey" PRIMARY KEY ("Id")
 );
 
 -- CreateTable
 CREATE TABLE "AuditLogs" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "ApiKeyId" TEXT,
+    "Id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "ApiKeyId" UUID,
     "Action" TEXT NOT NULL,
-    "FileId" TEXT,
+    "FileId" UUID,
     "Details" TEXT,
-    "IpAddress" TEXT,
-    "CreatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "AuditLogs_ApiKeyId_fkey" FOREIGN KEY ("ApiKeyId") REFERENCES "ApiKeys" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "IpAddress" INET,
+    "CreatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AuditLogs_pkey" PRIMARY KEY ("Id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UQ_FileVersions_File_Version" ON "FileVersions"("FileId", "VersionNumber");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Tags_Name_key" ON "Tags"("Name");
@@ -108,3 +122,30 @@ CREATE UNIQUE INDEX "ApiKeys_ApiKey_key" ON "ApiKeys"("ApiKey");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SignedUrls_Token_key" ON "SignedUrls"("Token");
+
+-- AddForeignKey
+ALTER TABLE "FileRelations" ADD CONSTRAINT "FK_FileRelations_Files" FOREIGN KEY ("FileId") REFERENCES "Files"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "FileCategoryRelations" ADD CONSTRAINT "FK_FileCategoryRelations_Files" FOREIGN KEY ("FileId") REFERENCES "Files"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "FileCategoryRelations" ADD CONSTRAINT "FK_FileCategoryRelations_FileCategories" FOREIGN KEY ("CategoryId") REFERENCES "FileCategories"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "FileVersions" ADD CONSTRAINT "FK_FileVersions_Files" FOREIGN KEY ("FileId") REFERENCES "Files"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "FileTags" ADD CONSTRAINT "FK_FileTags_Files" FOREIGN KEY ("FileId") REFERENCES "Files"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "FileTags" ADD CONSTRAINT "FK_FileTags_Tags" FOREIGN KEY ("TagId") REFERENCES "Tags"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "SignedUrls" ADD CONSTRAINT "FK_SignedUrls_Files" FOREIGN KEY ("FileId") REFERENCES "Files"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "AuditLogs" ADD CONSTRAINT "FK_AuditLogs_ApiKeys" FOREIGN KEY ("ApiKeyId") REFERENCES "ApiKeys"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "AuditLogs" ADD CONSTRAINT "FK_AuditLogs_Files" FOREIGN KEY ("FileId") REFERENCES "Files"("Id") ON DELETE NO ACTION ON UPDATE NO ACTION;

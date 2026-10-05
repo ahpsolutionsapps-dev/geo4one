@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "desarrollo/api"
+		},
+		{
+			"path": "desarrollo/frontend"
+		},
+		{
+			"path": "desarrollo/storage"
+		},
+	],
+	"settings": {}
+}
+
+

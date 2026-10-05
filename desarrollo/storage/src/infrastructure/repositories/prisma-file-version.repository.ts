@@ -7,7 +7,9 @@ export class PrismaFileVersionRepository implements FileVersionRepository {
   async create(
     data: Omit<FileVersionEntity, 'createdAt'>,
   ): Promise<FileVersionEntity> {
-    const record = await prisma.fileVersion.create({ data });
+    const record = await prisma.fileVersion.create({
+      data: { ...data, fileSize: BigInt(data.fileSize) },
+    });
     return mapFileVersion(record);
   }
 

@@ -17,7 +17,7 @@ export class PrismaFileRepository implements FileRepository {
         originalFileName: data.originalFileName,
         extension: data.extension,
         mimeType: data.mimeType,
-        fileSize: data.fileSize,
+        fileSize: BigInt(data.fileSize),
         storagePath: data.storagePath,
         hash: data.hash,
       },

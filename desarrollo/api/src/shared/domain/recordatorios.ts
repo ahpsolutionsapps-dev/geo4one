@@ -7,7 +7,14 @@ export type RecordatorioInfo = {
   diasAnticipacion: number | null;
 };
 
-type RecordatorioClient = Pick<PrismaClient, 'recordatorios'>;
+type RecordatorioClient = PrismaClient & {
+  recordatorios: {
+    findFirst: (args: any) => Promise<any>;
+    findMany: (args: any) => Promise<any[]>;
+    update: (args: any) => Promise<any>;
+    create: (args: any) => Promise<any>;
+  };
+};
 
 export async function getRecordatorioByEntidad(
   prisma: RecordatorioClient,

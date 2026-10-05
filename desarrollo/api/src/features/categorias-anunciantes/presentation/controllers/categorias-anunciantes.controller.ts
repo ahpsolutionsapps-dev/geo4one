@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
+import { HttpUploadServiceClient } from '../../../../shared/infrastructure/upload-service/upload-service.client';
 import { getAuthUserId } from '../../../../shared/presentation/get-auth-user-id';
+import { ImportCategoriasAnunciantesExcelService } from '../../application/services/import-categorias-anunciantes-excel.service';
 import { CreateCategoriaAnuncianteUseCase } from '../../application/use-cases/create-categoria-anunciante.use-case';
 import { DeactivateCategoriaAnuncianteUseCase } from '../../application/use-cases/deactivate-categoria-anunciante.use-case';
 import { GetCategoriaAnuncianteByIdUseCase } from '../../application/use-cases/get-categoria-anunciante-by-id.use-case';
@@ -18,6 +20,8 @@ export class CategoriasAnunciantesController {
     private readonly createCategoriaAnunciante: CreateCategoriaAnuncianteUseCase,
     private readonly updateCategoriaAnunciante: UpdateCategoriaAnuncianteUseCase,
     private readonly deactivateCategoriaAnunciante: DeactivateCategoriaAnuncianteUseCase,
+    private readonly uploadService: HttpUploadServiceClient,
+    private readonly importCategoriasAnunciantesExcel: ImportCategoriasAnunciantesExcelService,
   ) {}
 
   list = async (_req: Request, res: Response): Promise<void> => {
@@ -62,5 +66,45 @@ export class CategoriasAnunciantesController {
     const params = categoriaAnuncianteIdParamsSchema.parse(req.params);
     await this.deactivateCategoriaAnunciante.execute(params.id, idUsuario);
     res.status(204).send();
+  };
+
+  importExcel = async (req: Request, res: Response): Promise<void> => {
+    if (!req.file) {
+      res.status(400).json({ success: false, message: 'Archivo requerido' });
+      return;
+    }
+
+    const idUsuario = getAuthUserId(req);
+    const uploaded = await this.uploadService.uploadFile(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+    );
+
+    const importResult = await this.importCategoriasAnunciantesExcel.execute(
+      req.file.buffer,
+      req.file.originalname,
+      idUsuario,
+    );
+
+    res.status(201).json({
+      success: true,
+      message:
+        importResult.importedCount > 0
+          ? `Se importaron ${importResult.importedCount} categorías correctamente`
+          : 'No se importaron categorías nuevas',
+      data: {
+        id: uploaded.id,
+        fileName: uploaded.fileName,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        hash: '',
+        url: uploaded.url,
+        importedCount: importResult.importedCount,
+        skippedCount: importResult.skippedCount,
+        duplicates: importResult.duplicates,
+      },
+    });
   };
 }

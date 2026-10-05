@@ -1,0 +1,1 @@
+{"version":3,"file":"prisma-audit-log.repository.js","sourceRoot":"","sources":["../../../src/infrastructure/repositories/prisma-audit-log.repository.ts"],"names":[],"mappings":";;;AAEA,6DAAmD;AAEnD,MAAa,wBAAwB;IACnC,KAAK,CAAC,MAAM,CAAC,IAAuC;QAClD,MAAM,sBAAM,CAAC,QAAQ,CAAC,MAAM,CAAC,EAAE,IAAI,EAAE,CAAC,CAAC;IACzC,CAAC;CACF;AAJD,4DAIC"}

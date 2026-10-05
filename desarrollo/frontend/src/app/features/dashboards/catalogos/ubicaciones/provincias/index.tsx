@@ -2,6 +2,7 @@ import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
 import {
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   SortingState,
@@ -19,9 +20,12 @@ import {
 } from "@/components/shared/table";
 import { Page } from "@/components/shared/Page";
 import { Button, Card, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
+import { fuzzyFilter } from "@/utils/react-table/fuzzyFilter";
 
 import { createProvinciasColumns } from "./components/provincias-table.columns";
+import { ProvinciasExcelImportModal } from "./components/ProvinciasExcelImportModal";
 import { ProvinciasFormModal } from "./components/ProvinciasFormModal";
+import { UploadedExcelFile } from "./data/provincias.api";
 import { useProvincias } from "./hooks/use-provincias";
 import { Provincia, ProvinciaFormValues } from "./provincias.types";
 
@@ -36,12 +40,14 @@ export default function ProvinciasPage() {
     uploadExcel,
   } = useProvincias();
 
+  const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [selectedProvincia, setSelectedProvincia] = useState<Provincia | null>(null);
   const [provinceToDelete, setProvinceToDelete] = useState<Provincia | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<UploadedExcelFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const columns = useMemo(
@@ -60,10 +66,17 @@ export default function ProvinciasPage() {
     data: provincias,
     columns,
     state: {
+      globalFilter,
       sorting,
+    },
+    filterFns: {
+      fuzzy: fuzzyFilter,
     },
     enableSorting: true,
     getCoreRowModel: getCoreRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: fuzzyFilter,
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -126,15 +139,8 @@ export default function ProvinciasPage() {
 
     try {
       const uploadedFile = await uploadExcel(file);
-      const duplicatedMessage =
-        uploadedFile.skippedCount > 0
-          ? `; ${uploadedFile.skippedCount} ya existían y se omitieron`
-          : "";
-
-      toast.success(
-        `Archivo "${uploadedFile.originalFileName}" importado. ${uploadedFile.importedCount} provincias nuevas cargadas${duplicatedMessage}`,
-      );
       await reload();
+      setImportResult(uploadedFile);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "No se pudo importar el archivo",
@@ -158,7 +164,8 @@ export default function ProvinciasPage() {
               title="Provincias"
               createLabel="Nueva provincia"
               createTitle="Nueva provincia"
-              showSearch={false}
+              searchPlaceholder="Buscar provincia..."
+              showSearch={true}
               table={table}
               onCreate={handleCreate}
               extraActions={
@@ -298,6 +305,11 @@ export default function ProvinciasPage() {
           setSelectedProvincia(null);
         }}
         onSaved={handleSaved}
+      />
+
+      <ProvinciasExcelImportModal
+        result={importResult}
+        onClose={() => setImportResult(null)}
       />
 
       <ConfirmModal

@@ -3,47 +3,48 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model File {
-  id               String   @id
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
   fileName         String   @map("FileName")
   originalFileName String   @map("OriginalFileName")
   extension        String   @map("Extension")
   mimeType         String   @map("MimeType")
-  fileSize         Int      @map("FileSize")
+  fileSize         BigInt   @map("FileSize")
   storagePath      String   @map("StoragePath")
   hash             String?  @map("Hash")
-  isPublic         Int      @default(0) @map("IsPublic")
-  createdAt        DateTime @default(now()) @map("CreatedAt")
-  updatedAt        DateTime? @map("UpdatedAt")
-  deletedAt        DateTime? @map("DeletedAt")
+  isPublic         Boolean  @default(false) @map("IsPublic")
+  createdAt        DateTime @default(now()) @map("CreatedAt") @db.Timestamptz(6)
+  updatedAt        DateTime? @map("UpdatedAt") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("DeletedAt") @db.Timestamptz(6)
 
   relations  FileRelation[]
   categories FileCategoryRelation[]
   versions   FileVersion[]
   tags       FileTag[]
   signedUrls SignedUrl[]
+  auditLogs  AuditLog[]
 
   @@map("Files")
 }
 
 model FileRelation {
-  id         String   @id
-  fileId     String   @map("FileId")
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
+  fileId     String   @map("FileId") @db.Uuid
   entityType String   @map("EntityType")
   entityId   String   @map("EntityId")
-  createdAt  DateTime @default(now()) @map("CreatedAt")
+  createdAt  DateTime @default(now()) @map("CreatedAt") @db.Timestamptz(6)
 
-  file File @relation(fields: [fileId], references: [id])
+  file File @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_FileRelations_Files")
 
   @@map("FileRelations")
 }
 
 model FileCategory {
-  id          String  @id
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
   name        String  @map("Name")
   description String? @map("Description")
 
@@ -53,31 +54,33 @@ model FileCategory {
 }
 
 model FileCategoryRelation {
-  fileId     String @map("FileId")
-  categoryId String @map("CategoryId")
+  fileId     String @map("FileId") @db.Uuid
+  categoryId String @map("CategoryId") @db.Uuid
 
-  file     File         @relation(fields: [fileId], references: [id])
-  category FileCategory @relation(fields: [categoryId], references: [id])
+  file     File         @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_FileCategoryRelations_Files")
+  category FileCategory @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_FileCategoryRelations_FileCategories")
 
   @@id([fileId, categoryId])
   @@map("FileCategoryRelations")
 }
 
 model FileVersion {
-  id            String   @id
-  fileId        String   @map("FileId")
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
+  fileId        String   @map("FileId") @db.Uuid
   versionNumber Int      @map("VersionNumber")
   storagePath   String   @map("StoragePath")
-  fileSize      Int      @map("FileSize")
-  createdAt     DateTime @default(now()) @map("CreatedAt")
+  fileSize      BigInt   @map("FileSize")
+  createdAt     DateTime @default(now()) @map("CreatedAt") @db.Timestamptz(6)
 
-  file File @relation(fields: [fileId], references: [id])
+  file File @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_FileVersions_Files")
+
+  @@unique([fileId, versionNumber], map: "UQ_FileVersions_File_Version")
 
   @@map("FileVersions")
 }
 
 model Tag {
-  id   String @id
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
   name String @unique @map("Name")
 
   files FileTag[]
@@ -86,23 +89,23 @@ model Tag {
 }
 
 model FileTag {
-  fileId String @map("FileId")
-  tagId  String @map("TagId")
+  fileId String @map("FileId") @db.Uuid
+  tagId  String @map("TagId") @db.Uuid
 
-  file File @relation(fields: [fileId], references: [id])
-  tag  Tag  @relation(fields: [tagId], references: [id])
+  file File @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_FileTags_Files")
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_FileTags_Tags")
 
   @@id([fileId, tagId])
   @@map("FileTags")
 }
 
 model ApiKey {
-  id         String    @id
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
   name       String    @map("Name")
   apiKey     String    @unique @map("ApiKey")
-  isActive   Int       @default(1) @map("IsActive")
-  createdAt  DateTime  @default(now()) @map("CreatedAt")
-  lastUsedAt DateTime? @map("LastUsedAt")
+  isActive   Boolean   @default(true) @map("IsActive")
+  createdAt  DateTime  @default(now()) @map("CreatedAt") @db.Timestamptz(6)
+  lastUsedAt DateTime? @map("LastUsedAt") @db.Timestamptz(6)
 
   auditLogs AuditLog[]
 
@@ -110,27 +113,28 @@ model ApiKey {
 }
 
 model SignedUrl {
-  id        String   @id
-  fileId    String   @map("FileId")
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
+  fileId    String   @map("FileId") @db.Uuid
   token     String   @unique @map("Token")
-  expiresAt DateTime @map("ExpiresAt")
-  createdAt DateTime @default(now()) @map("CreatedAt")
+  expiresAt DateTime @map("ExpiresAt") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("CreatedAt") @db.Timestamptz(6)
 
-  file File @relation(fields: [fileId], references: [id])
+  file File @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_SignedUrls_Files")
 
   @@map("SignedUrls")
 }
 
 model AuditLog {
-  id        String   @id
-  apiKeyId  String?  @map("ApiKeyId")
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @map("Id") @db.Uuid
+  apiKeyId  String?  @map("ApiKeyId") @db.Uuid
   action    String   @map("Action")
-  fileId    String?  @map("FileId")
+  fileId    String?  @map("FileId") @db.Uuid
   details   String?  @map("Details")
-  ipAddress String?  @map("IpAddress")
-  createdAt DateTime @default(now()) @map("CreatedAt")
+  ipAddress String?  @map("IpAddress") @db.Inet
+  createdAt DateTime @default(now()) @map("CreatedAt") @db.Timestamptz(6)
 
-  apiKey ApiKey? @relation(fields: [apiKeyId], references: [id])
+  apiKey ApiKey? @relation(fields: [apiKeyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_AuditLogs_ApiKeys")
+  file   File?   @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_AuditLogs_Files")
 
   @@map("AuditLogs")
 }

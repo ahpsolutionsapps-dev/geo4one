@@ -42,7 +42,7 @@ cp .env.example .env.local
 | Variable | Descripción |
 |----------|-------------|
 | `PORT` | Puerto del servicio (default: 4000) |
-| `DATABASE_URL` | Ruta SQLite (`file:./database/upload-service.db`) |
+| `DATABASE_URL` | URL de PostgreSQL (base `storagedb`) |
 | `STORAGE_PATH` | Carpeta de almacenamiento físico |
 | `MAX_FILE_SIZE` | Tamaño máximo en bytes |
 | `ALLOWED_EXTENSIONS` | Extensiones permitidas (CSV) |
@@ -63,6 +63,7 @@ cp .env.example .env.local
 | Producción | `npm run build:prod && npm run start:prod` | `.env.production` |
 
 En staging y producción, `ADMIN_TOKEN` y `JWT_SECRET` deben configurarse con valores seguros (no los placeholders del archivo).
+En staging y producción también debe configurarse `DATABASE_URL` en el entorno de despliegue. Para desarrollo local, coloque la URL PostgreSQL en `.env.development.local`.
 
 ## Ejecución
 
@@ -130,6 +131,7 @@ src/
 ## Almacenamiento
 
 Los archivos se guardan en `storage/YYYY/MM/DD/{uuid}.{ext}` con hash SHA256 en base de datos.
+La base SQLite anterior no se migra automáticamente; el servicio conectado usa PostgreSQL.
 
 ## Documentación adicional
 

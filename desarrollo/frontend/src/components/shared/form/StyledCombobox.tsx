@@ -8,11 +8,10 @@ import {
   Label,
   Transition,
 } from "@headlessui/react";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import clsx from "clsx";
 import {
   Fragment,
-  useRef,
   ReactNode,
   Dispatch,
   SetStateAction,
@@ -21,7 +20,7 @@ import {
 
 // Local Imports
 import { Input, InputErrorMsg } from "@/components/ui";
-import { useFuse, useBoxPosition, useBoxSize, mergeRefs } from "@/hooks";
+import { useFuse } from "@/hooks";
 import { Highlight } from "../Highlight";
 
 // ----------------------------------------------------------------------
@@ -115,10 +114,6 @@ function CustomCombobox<TValue = DataItem>(
     matchAllOnEmptyQuery: true,
   });
 
-  const boxSizeRef = useRef<HTMLDivElement>(null);
-  const { width: inputWidth } = useBoxSize({ ref: boxSizeRef });
-  const { left: inputLeft, ref: boxPositionRef } = useBoxPosition();
-
   const getDisplayValue = (item: TValue | null | undefined): string => {
     if (!item) return "";
     return String((item as any)?.[displayField] ?? "");
@@ -152,7 +147,6 @@ function CustomCombobox<TValue = DataItem>(
             <>
               {label && <Label>{label}</Label>}
               <div
-                ref={mergeRefs(boxPositionRef, boxSizeRef)}
                 className={clsx("relative", label && "mt-1.5")}
               >
                 {multiple ? (
@@ -254,13 +248,9 @@ function CustomCombobox<TValue = DataItem>(
                   afterLeave={() => setQuery("")}
                 >
                   <ComboboxOptions
-                    anchor={{ to: "bottom end", gap: 8 }}
-                    style={{
-                      width: inputWidth,
-                      ["--left-anchor" as string]: `${inputLeft}px`,
-                    }}
+                    anchor={{ to: "bottom start", gap: 0 }}
                     className={clsx(
-                      "dark:border-dark-500 dark:bg-dark-750 absolute left-(--left-anchor)! z-10 max-h-60 overflow-x-hidden overflow-y-auto rounded-lg border border-gray-300 bg-white py-1 shadow-lg shadow-gray-200/50 outline-hidden focus-visible:outline-hidden dark:shadow-none",
+                      "dark:border-dark-500 dark:bg-dark-750 absolute z-10 max-h-60 w-(--button-width) overflow-x-hidden overflow-y-auto rounded-lg border border-gray-300 bg-white pt-0 pb-1 shadow-lg shadow-gray-200/50 outline-hidden focus-visible:outline-hidden dark:shadow-none",
                       multiple && "mt-2",
                     )}
                   >
@@ -280,7 +270,7 @@ function CustomCombobox<TValue = DataItem>(
                             active: boolean;
                           }) =>
                             clsx(
-                              "relative cursor-pointer px-4 py-2 outline-hidden transition-colors select-none",
+                              "relative cursor-pointer py-2 pr-10 pl-4 outline-hidden transition-colors select-none rtl:pr-4 rtl:pl-10",
                               active &&
                                 !selected &&
                                 "dark:bg-dark-600 bg-gray-100",
@@ -308,6 +298,11 @@ function CustomCombobox<TValue = DataItem>(
                                 String(
                                   item?.[displayField as keyof DataItem] ?? "",
                                 )
+                              )}
+                              {selected && (
+                                <span className="absolute inset-y-0 flex items-center ltr:right-0 ltr:pr-3 rtl:left-0 rtl:pl-3">
+                                  <CheckIcon className="size-5" aria-hidden="true" />
+                                </span>
                               )}
                             </span>
                           )}

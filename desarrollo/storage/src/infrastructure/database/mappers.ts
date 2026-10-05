@@ -24,10 +24,10 @@ export function mapFile(record: File): FileEntity {
     originalFileName: record.originalFileName,
     extension: record.extension,
     mimeType: record.mimeType,
-    fileSize: record.fileSize,
+    fileSize: Number(record.fileSize),
     storagePath: record.storagePath,
     hash: record.hash,
-    isPublic: record.isPublic === 1,
+    isPublic: record.isPublic,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
     deletedAt: record.deletedAt,
@@ -39,7 +39,7 @@ export function mapApiKey(record: ApiKey): ApiKeyEntity {
     id: record.id,
     name: record.name,
     apiKey: record.apiKey,
-    isActive: record.isActive === 1,
+    isActive: record.isActive,
     createdAt: record.createdAt,
     lastUsedAt: record.lastUsedAt,
   };
@@ -51,7 +51,7 @@ export function mapFileVersion(record: FileVersion): FileVersionEntity {
     fileId: record.fileId,
     versionNumber: record.versionNumber,
     storagePath: record.storagePath,
-    fileSize: record.fileSize,
+    fileSize: Number(record.fileSize),
     createdAt: record.createdAt,
   };
 }

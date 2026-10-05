@@ -1,0 +1,41 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.buildRolesRouter = buildRolesRouter;
+const express_1 = require("express");
+const env_1 = require("../../../core/config/env");
+const prisma_1 = require("../../../core/database/prisma");
+const async_handler_1 = require("../../../core/http/async-handler");
+const prisma_modulo_repository_1 = require("../../auth/infrastructure/repositories/prisma-modulo.repository");
+const jwt_token_service_1 = require("../../auth/infrastructure/services/jwt-token.service");
+const auth_middleware_1 = require("../../auth/presentation/middlewares/auth.middleware");
+const anular_rol_use_case_1 = require("../application/use-cases/anular-rol.use-case");
+const create_rol_use_case_1 = require("../application/use-cases/create-rol.use-case");
+const get_modulos_catalog_use_case_1 = require("../application/use-cases/get-modulos-catalog.use-case");
+const get_rol_by_id_use_case_1 = require("../application/use-cases/get-rol-by-id.use-case");
+const get_roles_use_case_1 = require("../application/use-cases/get-roles.use-case");
+const update_rol_use_case_1 = require("../application/use-cases/update-rol.use-case");
+const prisma_rol_repository_1 = require("../infrastructure/repositories/prisma-rol.repository");
+const roles_controller_1 = require("./controllers/roles.controller");
+function buildRolesRouter() {
+    const repository = new prisma_rol_repository_1.PrismaRolRepository(prisma_1.prisma);
+    const moduloRepository = new prisma_modulo_repository_1.PrismaModuloRepository(prisma_1.prisma);
+    const getRoles = new get_roles_use_case_1.GetRolesUseCase(repository);
+    const getRolById = new get_rol_by_id_use_case_1.GetRolByIdUseCase(repository, moduloRepository);
+    const createRol = new create_rol_use_case_1.CreateRolUseCase(repository, moduloRepository);
+    const updateRol = new update_rol_use_case_1.UpdateRolUseCase(repository, moduloRepository);
+    const anularRol = new anular_rol_use_case_1.AnularRolUseCase(repository);
+    const getModulosCatalog = new get_modulos_catalog_use_case_1.GetModulosCatalogUseCase(moduloRepository);
+    const controller = new roles_controller_1.RolesController(getRoles, getRolById, createRol, updateRol, anularRol, getModulosCatalog);
+    const tokenService = new jwt_token_service_1.JwtTokenService(env_1.env.jwt.secret, env_1.env.jwt.expiresIn);
+    const requireAuth = (0, auth_middleware_1.authMiddleware)(tokenService);
+    const router = (0, express_1.Router)();
+    router.get('/', requireAuth, (0, async_handler_1.asyncHandler)(controller.list));
+    router.get('/modulos', requireAuth, (0, async_handler_1.asyncHandler)(controller.listModulos));
+    router.get('/:id', requireAuth, (0, async_handler_1.asyncHandler)(controller.getById));
+    router.post('/', requireAuth, (0, async_handler_1.asyncHandler)(controller.create));
+    router.patch('/:id', requireAuth, (0, async_handler_1.asyncHandler)(controller.update));
+    router.put('/:id/modulos', requireAuth, (0, async_handler_1.asyncHandler)(controller.replaceModulos));
+    router.delete('/:id', requireAuth, (0, async_handler_1.asyncHandler)(controller.remove));
+    return router;
+}
+//# sourceMappingURL=roles.routes.js.map

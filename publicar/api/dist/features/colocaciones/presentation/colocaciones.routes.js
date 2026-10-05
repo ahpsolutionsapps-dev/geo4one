@@ -1,0 +1,44 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.buildColocacionesRouter = buildColocacionesRouter;
+const express_1 = require("express");
+const env_1 = require("../../../core/config/env");
+const prisma_1 = require("../../../core/database/prisma");
+const async_handler_1 = require("../../../core/http/async-handler");
+const jwt_token_service_1 = require("../../auth/infrastructure/services/jwt-token.service");
+const auth_middleware_1 = require("../../auth/presentation/middlewares/auth.middleware");
+const create_colocacion_use_case_1 = require("../application/use-cases/create-colocacion.use-case");
+const deactivate_colocacion_use_case_1 = require("../application/use-cases/deactivate-colocacion.use-case");
+const get_colocacion_by_id_use_case_1 = require("../application/use-cases/get-colocacion-by-id.use-case");
+const get_colocaciones_use_case_1 = require("../application/use-cases/get-colocaciones.use-case");
+const get_elementos_options_use_case_1 = require("../application/use-cases/get-elementos-options.use-case");
+const get_periodos_options_use_case_1 = require("../application/use-cases/get-periodos-options.use-case");
+const get_versiones_campana_options_use_case_1 = require("../application/use-cases/get-versiones-campana-options.use-case");
+const update_colocacion_use_case_1 = require("../application/use-cases/update-colocacion.use-case");
+const prisma_colocacion_repository_1 = require("../infrastructure/repositories/prisma-colocacion.repository");
+const colocaciones_controller_1 = require("./controllers/colocaciones.controller");
+function buildColocacionesRouter() {
+    const repository = new prisma_colocacion_repository_1.PrismaColocacionRepository(prisma_1.prisma);
+    const getColocaciones = new get_colocaciones_use_case_1.GetColocacionesUseCase(repository);
+    const getColocacionById = new get_colocacion_by_id_use_case_1.GetColocacionByIdUseCase(repository);
+    const getElementosOptions = new get_elementos_options_use_case_1.GetElementosOptionsUseCase(repository);
+    const getVersionesCampanaOptions = new get_versiones_campana_options_use_case_1.GetVersionesCampanaOptionsUseCase(repository);
+    const getPeriodosOptions = new get_periodos_options_use_case_1.GetPeriodosOptionsUseCase(repository);
+    const createColocacion = new create_colocacion_use_case_1.CreateColocacionUseCase(repository);
+    const updateColocacion = new update_colocacion_use_case_1.UpdateColocacionUseCase(repository);
+    const deactivateColocacion = new deactivate_colocacion_use_case_1.DeactivateColocacionUseCase(repository);
+    const controller = new colocaciones_controller_1.ColocacionesController(getColocaciones, getColocacionById, getElementosOptions, getVersionesCampanaOptions, getPeriodosOptions, createColocacion, updateColocacion, deactivateColocacion);
+    const tokenService = new jwt_token_service_1.JwtTokenService(env_1.env.jwt.secret, env_1.env.jwt.expiresIn);
+    const requireAuth = (0, auth_middleware_1.authMiddleware)(tokenService);
+    const router = (0, express_1.Router)();
+    router.get('/', requireAuth, (0, async_handler_1.asyncHandler)(controller.list));
+    router.get('/options/elementos', requireAuth, (0, async_handler_1.asyncHandler)(controller.listElementosOptions));
+    router.get('/options/versiones-campanas', requireAuth, (0, async_handler_1.asyncHandler)(controller.listVersionesCampanaOptions));
+    router.get('/options/periodos-colocacion', requireAuth, (0, async_handler_1.asyncHandler)(controller.listPeriodosOptions));
+    router.get('/:id', requireAuth, (0, async_handler_1.asyncHandler)(controller.getById));
+    router.post('/', requireAuth, (0, async_handler_1.asyncHandler)(controller.create));
+    router.patch('/:id', requireAuth, (0, async_handler_1.asyncHandler)(controller.update));
+    router.delete('/:id', requireAuth, (0, async_handler_1.asyncHandler)(controller.remove));
+    return router;
+}
+//# sourceMappingURL=colocaciones.routes.js.map

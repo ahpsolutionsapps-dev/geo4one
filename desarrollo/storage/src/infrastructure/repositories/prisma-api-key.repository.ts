@@ -12,7 +12,7 @@ export class PrismaApiKeyRepository implements ApiKeyRepository {
         id: data.id,
         name: data.name,
         apiKey: data.apiKey,
-        isActive: data.isActive ? 1 : 0,
+        isActive: data.isActive,
       },
     });
     return mapApiKey(record);
@@ -36,7 +36,7 @@ export class PrismaApiKeyRepository implements ApiKeyRepository {
   async updateStatus(id: string, isActive: boolean): Promise<ApiKeyEntity> {
     const record = await prisma.apiKey.update({
       where: { id },
-      data: { isActive: isActive ? 1 : 0 },
+      data: { isActive },
     });
     return mapApiKey(record);
   }

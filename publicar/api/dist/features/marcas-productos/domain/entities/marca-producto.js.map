@@ -1,0 +1,1 @@
+{"version":3,"file":"marca-producto.js","sourceRoot":"","sources":["../../../../../src/features/marcas-productos/domain/entities/marca-producto.ts"],"names":[],"mappings":";;;AAcA,MAAa,aAAa;IACK;IAA7B,YAA6B,KAAyB;QAAzB,UAAK,GAAL,KAAK,CAAoB;IAAG,CAAC;IAE1D,YAAY;QACV,OAAO,EAAE,GAAG,IAAI,CAAC,KAAK,EAAE,CAAC;IAC3B,CAAC;CACF;AAND,sCAMC"}

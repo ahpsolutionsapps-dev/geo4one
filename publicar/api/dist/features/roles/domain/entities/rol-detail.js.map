@@ -1,0 +1,1 @@
+{"version":3,"file":"rol-detail.js","sourceRoot":"","sources":["../../../../../src/features/roles/domain/entities/rol-detail.ts"],"names":[],"mappings":";;;AAUA,MAAa,SAAS;IACS;IAA7B,YAA6B,KAAqB;QAArB,UAAK,GAAL,KAAK,CAAgB;IAAG,CAAC;IAEtD,YAAY;QACV,OAAO;YACL,GAAG,IAAI,CAAC,KAAK;YACb,SAAS,EAAE,CAAC,GAAG,IAAI,CAAC,KAAK,CAAC,SAAS,CAAC;SACrC,CAAC;IACJ,CAAC;CACF;AATD,8BASC"}

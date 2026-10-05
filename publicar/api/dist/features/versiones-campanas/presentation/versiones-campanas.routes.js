@@ -1,0 +1,44 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.buildVersionesCampanasRouter = buildVersionesCampanasRouter;
+const express_1 = require("express");
+const env_1 = require("../../../core/config/env");
+const prisma_1 = require("../../../core/database/prisma");
+const async_handler_1 = require("../../../core/http/async-handler");
+const jwt_token_service_1 = require("../../auth/infrastructure/services/jwt-token.service");
+const auth_middleware_1 = require("../../auth/presentation/middlewares/auth.middleware");
+const create_version_campana_use_case_1 = require("../application/use-cases/create-version-campana.use-case");
+const deactivate_version_campana_use_case_1 = require("../application/use-cases/deactivate-version-campana.use-case");
+const get_anunciantes_options_use_case_1 = require("../application/use-cases/get-anunciantes-options.use-case");
+const get_combos_anunciantes_options_use_case_1 = require("../application/use-cases/get-combos-anunciantes-options.use-case");
+const get_marcas_productos_options_use_case_1 = require("../application/use-cases/get-marcas-productos-options.use-case");
+const get_version_campana_by_id_use_case_1 = require("../application/use-cases/get-version-campana-by-id.use-case");
+const get_versiones_campanas_use_case_1 = require("../application/use-cases/get-versiones-campanas.use-case");
+const update_version_campana_use_case_1 = require("../application/use-cases/update-version-campana.use-case");
+const prisma_version_campana_repository_1 = require("../infrastructure/repositories/prisma-version-campana.repository");
+const versiones_campanas_controller_1 = require("./controllers/versiones-campanas.controller");
+function buildVersionesCampanasRouter() {
+    const repository = new prisma_version_campana_repository_1.PrismaVersionCampanaRepository(prisma_1.prisma);
+    const getVersionesCampanas = new get_versiones_campanas_use_case_1.GetVersionesCampanasUseCase(repository);
+    const getVersionCampanaById = new get_version_campana_by_id_use_case_1.GetVersionCampanaByIdUseCase(repository);
+    const getAnunciantesOptions = new get_anunciantes_options_use_case_1.GetAnunciantesOptionsUseCase(repository);
+    const getMarcasProductosOptions = new get_marcas_productos_options_use_case_1.GetMarcasProductosOptionsUseCase(repository);
+    const getCombosAnunciantesOptions = new get_combos_anunciantes_options_use_case_1.GetCombosAnunciantesOptionsUseCase(repository);
+    const createVersionCampana = new create_version_campana_use_case_1.CreateVersionCampanaUseCase(repository);
+    const updateVersionCampana = new update_version_campana_use_case_1.UpdateVersionCampanaUseCase(repository);
+    const deactivateVersionCampana = new deactivate_version_campana_use_case_1.DeactivateVersionCampanaUseCase(repository);
+    const controller = new versiones_campanas_controller_1.VersionesCampanasController(getVersionesCampanas, getVersionCampanaById, getAnunciantesOptions, getMarcasProductosOptions, getCombosAnunciantesOptions, createVersionCampana, updateVersionCampana, deactivateVersionCampana);
+    const tokenService = new jwt_token_service_1.JwtTokenService(env_1.env.jwt.secret, env_1.env.jwt.expiresIn);
+    const requireAuth = (0, auth_middleware_1.authMiddleware)(tokenService);
+    const router = (0, express_1.Router)();
+    router.get('/', requireAuth, (0, async_handler_1.asyncHandler)(controller.list));
+    router.get('/options/anunciantes', requireAuth, (0, async_handler_1.asyncHandler)(controller.listAnunciantesOptions));
+    router.get('/options/marcas-productos', requireAuth, (0, async_handler_1.asyncHandler)(controller.listMarcasProductosOptions));
+    router.get('/options/combos-anunciantes', requireAuth, (0, async_handler_1.asyncHandler)(controller.listCombosAnunciantesOptions));
+    router.get('/:id', requireAuth, (0, async_handler_1.asyncHandler)(controller.getById));
+    router.post('/', requireAuth, (0, async_handler_1.asyncHandler)(controller.create));
+    router.patch('/:id', requireAuth, (0, async_handler_1.asyncHandler)(controller.update));
+    router.delete('/:id', requireAuth, (0, async_handler_1.asyncHandler)(controller.remove));
+    return router;
+}
+//# sourceMappingURL=versiones-campanas.routes.js.map

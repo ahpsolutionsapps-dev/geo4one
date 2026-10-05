@@ -55,6 +55,10 @@ export function useAnunciantes() {
     [loadAnunciantes],
   );
 
+  const uploadExcel = useCallback(async (file: File) => {
+    return anunciantesApi.uploadExcel(file);
+  }, []);
+
   return {
     anunciantes,
     isLoading,
@@ -62,5 +66,6 @@ export function useAnunciantes() {
     reload: loadAnunciantes,
     saveAnunciante,
     deleteAnunciante,
+    uploadExcel,
   };
 }

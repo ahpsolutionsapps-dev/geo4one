@@ -429,7 +429,7 @@ export class GetMetricsUseCase {
           where: { deletedAt: null },
           _sum: { fileSize: true },
         }),
-        prisma.apiKey.count({ where: { isActive: 1 } }),
+        prisma.apiKey.count({ where: { isActive: true } }),
         prisma.auditLog.count({
           where: { action: AUDIT_ACTIONS.UPLOAD, createdAt: { gte: startOfDay } },
         }),
@@ -440,7 +440,7 @@ export class GetMetricsUseCase {
 
     return {
       totalFiles,
-      totalSizeBytes: sizeAgg._sum.fileSize ?? 0,
+      totalSizeBytes: Number(sizeAgg._sum.fileSize ?? 0),
       activeApiKeys,
       uploadsToday,
       downloadsToday,

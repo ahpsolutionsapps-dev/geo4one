@@ -70,6 +70,10 @@ export function useSubSectoresIndustriales() {
     [loadSubSectoresIndustriales],
   );
 
+  const uploadExcel = useCallback(async (file: File) => {
+    return subSectoresIndustrialesApi.uploadExcel(file);
+  }, []);
+
   return {
     subSectoresIndustriales,
     isLoading,
@@ -77,5 +81,6 @@ export function useSubSectoresIndustriales() {
     reload: loadSubSectoresIndustriales,
     saveSubSectorIndustrial,
     deleteSubSectorIndustrial,
+    uploadExcel,
   };
 }

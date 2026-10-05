@@ -3,11 +3,17 @@ import { Fragment, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as Yup from "yup";
 
-import { Button, Input, InputErrorMsg, Select, Switch } from "@/components/ui";
+import { Combobox as SearchableSelect } from "@/components/shared/form/StyledCombobox";
+import { Button, Input, InputErrorMsg, Switch } from "@/components/ui";
 import { typedYupResolver } from "@/utils/typedYupResolver";
 
 import { provinciasApi } from "../../provincias/data/provincias.api";
 import { Municipio, MunicipioFormValues } from "../municipios.types";
+
+interface ProvinceOption {
+  label: string;
+  value: string;
+}
 
 const municipioSchema = Yup.object().shape({
   idProvincia: Yup.string().required("La provincia es requerida"),
@@ -35,7 +41,7 @@ export function MunicipiosFormModal({
   onSaved,
 }: MunicipiosFormModalProps) {
   const isEditMode = Boolean(municipio);
-  const [provinceOptions, setProvinceOptions] = useState<{ label: string; value: string }[]>([]);
+  const [provinceOptions, setProvinceOptions] = useState<ProvinceOption[]>([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 
   const {
@@ -136,22 +142,19 @@ export function MunicipiosFormModal({
                         control={control}
                         name="idProvincia"
                         render={({ field }) => (
-                          <Select
+                          <SearchableSelect<ProvinceOption>
                             label="Provincia"
-                            data={[
-                              {
-                                label: "Seleccione una provincia",
-                                value: "",
-                                disabled: true,
-                              },
-                              ...provinceOptions,
-                            ]}
+                            data={provinceOptions}
+                            displayField="label"
+                            searchFields={["label"]}
+                            placeholder="Buscar provincia..."
                             disabled={isLoadingOptions}
-                            value={field.value ?? ""}
-                            onChange={(event) => field.onChange(event.target.value)}
-                            onBlur={field.onBlur}
+                            value={provinceOptions.find((option) => option.value === field.value) ?? null}
+                            onChange={(option: ProvinceOption | null) =>
+                              field.onChange(option?.value ?? "")
+                            }
+                            inputProps={{ ref: field.ref, onBlur: field.onBlur }}
                             name={field.name}
-                            ref={field.ref}
                             error={errors.idProvincia?.message}
                           />
                         )}
