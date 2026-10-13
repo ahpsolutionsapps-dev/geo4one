@@ -1,21 +1,4 @@
 import {
-  Dialog,
-  DialogPanel,
-  Tab,
-  TabGroup,
-  TabList,
-  Transition,
-  TransitionChild,
-} from "@headlessui/react";
-import {
-  ArrowUpTrayIcon,
-  DocumentPlusIcon,
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
-import {
   flexRender,
   getCoreRowModel,
   getFacetedMinMaxValues,
@@ -26,12 +9,14 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
+import { ArrowUpTrayIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
-import { ChangeEvent, Fragment, useCallback, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useMemo, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 
 import { useThemeContext } from "@/app/contexts/theme/context";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { Page } from "@/components/shared/Page";
 import {
   EntityListToolbar,
@@ -42,103 +27,65 @@ import {
   TableSortIcon,
   usePersistedTableState,
 } from "@/components/shared/table";
-import {
-  Badge,
-  Button,
-  Card,
-  Input,
-  Radio,
-  Select,
-  Spinner,
-  Table,
-  TBody,
-  Td,
-  Textarea,
-  Th,
-  THead,
-  Tr,
-} from "@/components/ui";
+import { Badge, Button, Card, Spinner, Table, TBody, Td, Th, THead, Tr } from "@/components/ui";
 import { useDidUpdate, useLockScrollbar } from "@/hooks";
 import { getUserAgentBrowser } from "@/utils/dom/getUserAgentBrowser";
 import { fuzzyFilter } from "@/utils/react-table/fuzzyFilter";
 
+import { useElementoFormOptions } from "../application/use-elemento-form-options";
 import { useElementos } from "../application/use-elementos";
-import type { Elemento } from "../domain/types";
-
-const fallbackRows: Elemento[] = [
-  {
-    id: "ELM-0001",
-    elemento: "Valla Winston Churchill",
-    tipo: "Estático",
-    formato: "Valla",
-    tamaño: "14 x 48",
-    proveedor: "Valla Estilo",
-    ubicacion: "Santo Domingo",
-    licencia: "LIC-2025-001",
-    costo: "15,000.00",
-    status: "Activo",
-    imagen:
-      "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "ELM-0002",
-    elemento: "Pantalla Ágora Mall",
-    tipo: "Digital",
-    formato: "Pantalla",
-    tamaño: "8 x 14",
-    proveedor: "Pantalla LED",
-    ubicacion: "Santo Domingo",
-    licencia: "LIC-2025-002",
-    costo: "25,000.00",
-    status: "Activo",
-    imagen:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "ELM-0003",
-    elemento: "Mupi Blue Mall",
-    tipo: "Estático",
-    formato: "Mupi",
-    tamaño: "4 x 6",
-    proveedor: "Mupi",
-    ubicacion: "Santo Domingo",
-    licencia: "LIC-2025-003",
-    costo: "8,500.00",
-    status: "Activo",
-    imagen:
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: "ELM-0004",
-    elemento: "Valla 27 de Febrero",
-    tipo: "Estático",
-    formato: "Valla",
-    tamaño: "12 x 36",
-    proveedor: "Valla Estilo",
-    ubicacion: "Santo Domingo",
-    licencia: "LIC-2024-015",
-    costo: "12,000.00",
-    status: "Inactivo",
-    imagen:
-      "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=800&q=80",
-  },
-];
-
-const statusColors = {
-  Activo: "success",
-  Inactivo: "error",
-  Anulado: "neutral",
-} as const;
+import type { Elemento, ElementoFormValues } from "../domain/types";
+import { ElementoFormModal } from "./components/ElementoFormModal";
 
 const isSafari = getUserAgentBrowser() === "Safari";
 
+function resolveName(
+  map: Map<string, string>,
+  id: number | null | undefined,
+): string | null {
+  if (id == null) {
+    return null;
+  }
+
+  return map.get(String(id)) ?? `#${id}`;
+}
+
+function formatCosto(value: number | string | null): string {
+  if (value == null || value === "") {
+    return "—";
+  }
+
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) {
+    return "—";
+  }
+
+  return `RD$ ${numeric.toLocaleString("es-DO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function buildLookup(items: { label: string; value: string }[]): Map<string, string> {
+  const map = new Map<string, string>();
+  items.forEach((item) => map.set(item.value, item.label));
+  return map;
+}
+
 export default function ElementosPage() {
-  const { items, loading, error, reload, uploadExcel } = useElementos();
+  const { items, loading, error, reload, uploadExcel, saveElemento, removeElemento } =
+    useElementos();
+  const {
+    options,
+    loading: optionsLoading,
+    error: optionsError,
+  } = useElementoFormOptions();
   const { cardSkin } = useThemeContext();
 
-  const rows = useMemo(() => (items.length > 0 ? items : fallbackRows), [items]);
   const [formOpen, setFormOpen] = useState(false);
   const [selectedElemento, setSelectedElemento] = useState<Elemento | null>(null);
+  const [elementoToDelete, setElementoToDelete] = useState<Elemento | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
@@ -163,10 +110,33 @@ export default function ElementosPage() {
     paginationKey: "table-pagination-elementos",
   });
 
-  const openCreateForm = () => {
+  const proveedorById = useMemo(() => buildLookup(options.proveedores), [options.proveedores]);
+  const tipoById = useMemo(() => buildLookup(options.tiposElementos), [options.tiposElementos]);
+  const formatoById = useMemo(
+    () => buildLookup(options.formatos.map((item) => ({ label: item.label, value: item.value }))),
+    [options.formatos],
+  );
+  const tamanoById = useMemo(() => buildLookup(options.tamanos), [options.tamanos]);
+  const provinciaById = useMemo(() => buildLookup(options.provincias), [options.provincias]);
+  const municipioById = useMemo(
+    () => buildLookup(options.municipios.map((item) => ({ label: item.label, value: item.value }))),
+    [options.municipios],
+  );
+
+  const openCreateForm = useCallback(() => {
     setSelectedElemento(null);
     setFormOpen(true);
-  };
+  }, []);
+
+  const openEditForm = useCallback((elemento: Elemento) => {
+    setSelectedElemento(elemento);
+    setFormOpen(true);
+  }, []);
+
+  const closeForm = useCallback(() => {
+    setFormOpen(false);
+    setSelectedElemento(null);
+  }, []);
 
   useHotkeys(
     "mod+n",
@@ -181,7 +151,7 @@ export default function ElementosPage() {
       enableOnFormTags: true,
       preventDefault: true,
     },
-    [formOpen],
+    [formOpen, openCreateForm],
   );
 
   useHotkeys(
@@ -232,68 +202,73 @@ export default function ElementosPage() {
         cell: SelectCell,
       },
       {
-        accessorKey: "id",
-        id: "id",
+        accessorFn: (row: Elemento) => row.idElemento,
+        id: "idElemento",
         header: "ID",
-        cell: ({ row }: { row: { original: Elemento } }) => row.original.id ?? "—",
+        cell: ({ row }: { row: { original: Elemento } }) => row.original.idElemento,
       },
       {
-        accessorKey: "elemento",
-        header: "Elemento",
+        accessorFn: (row: Elemento) => resolveName(proveedorById, row.idProveedor) ?? "",
+        id: "proveedor",
+        header: "Proveedor",
         cell: ({ row }: { row: { original: Elemento } }) => (
-          <div className="flex items-center gap-3">
-            <img
-              src={row.original.imagen ?? fallbackRows[0].imagen}
-              alt={row.original.elemento ?? "Elemento"}
-              className="h-10 w-10 rounded-md object-cover"
-            />
-            <span className="font-medium text-gray-800 dark:text-dark-100">
-              {row.original.elemento ?? "Sin nombre"}
-            </span>
-          </div>
+          <span className="font-medium text-gray-800 dark:text-dark-100">
+            {resolveName(proveedorById, row.original.idProveedor) ?? "—"}
+          </span>
         ),
       },
       {
-        accessorKey: "tipo",
+        accessorFn: (row: Elemento) => resolveName(tipoById, row.idTipoElemento) ?? "",
+        id: "tipoElemento",
         header: "Tipo",
+        cell: ({ row }: { row: { original: Elemento } }) =>
+          resolveName(tipoById, row.original.idTipoElemento) ?? "—",
       },
       {
-        accessorKey: "formato",
+        accessorFn: (row: Elemento) => resolveName(formatoById, row.idFormato) ?? "",
+        id: "formato",
         header: "Formato",
+        cell: ({ row }: { row: { original: Elemento } }) =>
+          resolveName(formatoById, row.original.idFormato) ?? "—",
       },
       {
-        accessorKey: "tamaño",
+        accessorFn: (row: Elemento) => resolveName(tamanoById, row.idTamano) ?? "",
+        id: "tamano",
         header: "Tamaño",
+        cell: ({ row }: { row: { original: Elemento } }) =>
+          resolveName(tamanoById, row.original.idTamano) ?? "—",
       },
       {
-        accessorKey: "proveedor",
-        header: "Proveedor",
-      },
-      {
-        accessorKey: "ubicacion",
+        accessorFn: (row: Elemento) =>
+          [resolveName(provinciaById, row.idProvincia), resolveName(municipioById, row.idMunicipio)]
+            .filter(Boolean)
+            .join(" / "),
+        id: "ubicacion",
         header: "Ubicación",
+        cell: ({ row }: { row: { original: Elemento } }) => {
+          const provincia = resolveName(provinciaById, row.original.idProvincia);
+          const municipio = resolveName(municipioById, row.original.idMunicipio);
+          const value = [provincia, municipio].filter(Boolean).join(" / ");
+          return value || "—";
+        },
       },
       {
         accessorKey: "licencia",
         header: "Licencia",
+        cell: ({ row }: { row: { original: Elemento } }) => row.original.licencia ?? "—",
       },
       {
-        accessorKey: "costo",
+        accessorFn: (row: Elemento) => Number(row.costoAlquiler ?? 0),
+        id: "costoAlquiler",
         header: "Costo",
+        cell: ({ row }: { row: { original: Elemento } }) => formatCosto(row.original.costoAlquiler),
       },
       {
-        accessorKey: "status",
+        accessorKey: "activo",
         header: "Estatus",
         cell: ({ row }: { row: { original: Elemento } }) => (
-          <Badge
-            variant="soft"
-            color={
-              statusColors[
-                (row.original.status as keyof typeof statusColors) ?? "Anulado"
-              ] ?? "neutral"
-            }
-          >
-            {row.original.status ?? "Sin estado"}
+          <Badge variant="soft" color={row.original.activo ? "success" : "error"}>
+            {row.original.activo ? "Activo" : "Inactivo"}
           </Badge>
         ),
       },
@@ -306,21 +281,9 @@ export default function ElementosPage() {
               variant="flat"
               isIcon
               className="size-7 rounded-full"
-              aria-label="Ver elemento"
-              title="Ver elemento"
-            >
-              <EyeIcon className="size-4.5" />
-            </Button>
-            <Button
-              variant="flat"
-              isIcon
-              className="size-7 rounded-full"
               aria-label="Editar elemento"
               title="Editar elemento"
-              onClick={() => {
-                setSelectedElemento(row.original);
-                setFormOpen(true);
-              }}
+              onClick={() => openEditForm(row.original)}
             >
               <PencilIcon className="size-4.5" />
             </Button>
@@ -330,9 +293,7 @@ export default function ElementosPage() {
               className="size-7 rounded-full"
               aria-label="Eliminar elemento"
               title="Eliminar elemento"
-              onClick={() => {
-                toast.success(`Elemento "${row.original.elemento ?? "sin nombre"}" listo para eliminar.`);
-              }}
+              onClick={() => setElementoToDelete(row.original)}
             >
               <TrashIcon className="size-4.5" />
             </Button>
@@ -340,11 +301,11 @@ export default function ElementosPage() {
         ),
       },
     ],
-    [],
+    [proveedorById, tipoById, formatoById, tamanoById, provinciaById, municipioById, openEditForm],
   );
 
   const table = useReactTable({
-    data: rows,
+    data: items,
     columns,
     state: {
       globalFilter,
@@ -357,13 +318,20 @@ export default function ElementosPage() {
     },
     meta: {
       setTableSettings,
-      deleteRows: async (selectedRows) => {
-        const count = selectedRows.length;
-        if (!count) {
+      deleteRows: (rows) => {
+        const selectedRows = rows.map((row) => row.original);
+
+        if (!selectedRows.length) {
           return;
         }
 
-        toast.success(`${count} elemento(s) eliminados`);
+        void (async () => {
+          for (const row of selectedRows) {
+            await removeElemento(row.idElemento);
+          }
+
+          toast.success(`${selectedRows.length} elemento(s) eliminados`);
+        })();
       },
     },
     filterFns: {
@@ -385,24 +353,39 @@ export default function ElementosPage() {
     onColumnPinningChange: setColumnPinning,
     onRowSelectionChange: setRowSelection,
     onPaginationChange,
-    getRowId: (row) => String(row.id ?? `${row.elemento ?? "row"}-${row.licencia ?? "no-lic"}`),
+    getRowId: (row) => String(row.idElemento),
   });
 
-  useDidUpdate(() => table.resetRowSelection(), [rows]);
+  useDidUpdate(() => table.resetRowSelection(), [items]);
   useLockScrollbar(tableSettings.enableFullScreen);
 
-  const closeForm = () => {
-    setFormOpen(false);
-    setSelectedElemento(null);
-  };
+  const handleSaved = useCallback(
+    async (values: ElementoFormValues) => {
+      await saveElemento(selectedElemento?.idElemento ?? null, values);
+      toast.success(
+        selectedElemento ? "Elemento actualizado correctamente" : "Elemento creado correctamente",
+      );
+    },
+    [saveElemento, selectedElemento],
+  );
 
-  const handleSaved = useCallback(() => {
-    setFormOpen(false);
-    setSelectedElemento(null);
-    toast.success(
-      selectedElemento ? "Elemento actualizado correctamente" : "Elemento creado correctamente",
-    );
-  }, [selectedElemento]);
+  const handleDeleteElemento = async () => {
+    if (!elementoToDelete) {
+      return;
+    }
+
+    setConfirmLoading(true);
+
+    try {
+      await removeElemento(elementoToDelete.idElemento);
+      toast.success("Elemento eliminado correctamente");
+      setElementoToDelete(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo eliminar el elemento");
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
@@ -444,12 +427,14 @@ export default function ElementosPage() {
     }
   };
 
+  const loadError = error ?? optionsError;
+
   return (
     <Page title="Elementos">
-      <div className="transition-content pt-3 flex h-full min-h-0 w-full flex-col pb-5 supports-[height:1dvh]:min-h-[calc(100dvh-4.5rem)]">
-        {error ? (
+      <div className="transition-content pt-3 flex h-full min-h-0 w-full flex-col pb-5 supports-[height:1dvh]:min-h-[80%]">
+        {loadError ? (
           <div className="mx-(--margin-x) mb-4 rounded-lg border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
-            {error}
+            {loadError}
           </div>
         ) : null}
 
@@ -464,7 +449,7 @@ export default function ElementosPage() {
             title="Elementos"
             createLabel="Nuevo elemento"
             createTitle="Nuevo elemento (Ctrl+N)"
-            searchPlaceholder="Buscar ID, elemento, licencia, proveedor..."
+            searchPlaceholder="Buscar ID, proveedor, licencia, ubicación..."
             searchInputRef={searchInputRef}
             table={table}
             onCreate={openCreateForm}
@@ -594,9 +579,7 @@ export default function ElementosPage() {
                               key={cell.id}
                               className={clsx(
                                 "relative bg-white",
-                                cardSkin === "shadow"
-                                  ? "dark:bg-dark-700"
-                                  : "dark:bg-dark-900",
+                                cardSkin === "shadow" ? "dark:bg-dark-700" : "dark:bg-dark-900",
                                 cell.column.getCanPin() && [
                                   cell.column.getIsPinned() === "left" &&
                                     "sticky z-2 ltr:left-0 rtl:right-0",
@@ -644,322 +627,40 @@ export default function ElementosPage() {
       </div>
 
       <ElementoFormModal
-        show={formOpen}
-        onClose={closeForm}
+        open={formOpen}
         elemento={selectedElemento}
-        onSaved={handleSaved}
+        options={options}
+        optionsLoading={optionsLoading}
+        onClose={closeForm}
+        onSave={handleSaved}
+      />
+
+      <ConfirmModal
+        show={Boolean(elementoToDelete)}
+        onClose={() => setElementoToDelete(null)}
+        onOk={handleDeleteElemento}
+        state="pending"
+        confirmLoading={confirmLoading}
+        messages={{
+          pending: {
+            title: "Eliminar elemento",
+            description: elementoToDelete
+              ? `¿Deseas eliminar el elemento #${elementoToDelete.idElemento}?`
+              : "",
+            actionText: "Eliminar",
+          },
+          success: {
+            title: "Elemento eliminado",
+            description: "El elemento fue eliminado correctamente.",
+            actionText: "Cerrar",
+          },
+          error: {
+            title: "No se pudo eliminar",
+            description: "Intenta nuevamente.",
+            actionText: "Reintentar",
+          },
+        }}
       />
     </Page>
-  );
-}
-
-const modalTabs = [
-  "Información General",
-  "Ubicación",
-  "Licencia y Costos",
-  "Archivos y Observaciones",
-];
-
-function RequiredLabel({ text }: { text: string }) {
-  return (
-    <>
-      {text} <span className="text-error">*</span>
-    </>
-  );
-}
-
-function ElementoFormModal({
-  show,
-  elemento,
-  onClose,
-  onSaved,
-}: {
-  show: boolean;
-  elemento?: Elemento | null;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  return (
-    <Transition show={show} as={Fragment}>
-      <Dialog
-        as="div"
-        className="fixed inset-0 z-100 flex items-center justify-center p-3 sm:p-5"
-        onClose={onClose}
-      >
-        <TransitionChild
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-[2px]" />
-        </TransitionChild>
-
-        <TransitionChild
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0 scale-95"
-          enterTo="opacity-100 scale-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100 scale-100"
-          leaveTo="opacity-0 scale-95"
-        >
-          <DialogPanel className="scrollbar-sm relative w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-dark-700">
-            <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-5 pt-5 pb-4 sm:px-6 sm:pt-6">
-              <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-full bg-primary-100 text-primary-600 dark:bg-primary-500/20 dark:text-primary-400">
-                  <DocumentPlusIcon className="size-7" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-gray-800 dark:text-dark-100">
-                    {elemento ? "Editar elemento" : "Crear nuevo elemento"}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-dark-300">
-                    {elemento
-                      ? "Actualiza la información del registro seleccionado."
-                      : "Complete la información para registrar un nuevo elemento publicitario."}
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                variant="flat"
-                isIcon
-                className="mt-0.5 size-8 rounded-full"
-                aria-label="Cerrar modal"
-                onClick={onClose}
-              >
-                <XMarkIcon className="size-5" />
-              </Button>
-            </div>
-
-            <div className="max-h-[calc(100vh-10rem)] overflow-y-auto px-5 pb-5 sm:px-6 sm:pb-6">
-              <TabGroup>
-                <TabList className="hide-scrollbar mt-2 flex overflow-x-auto border-b border-gray-200 dark:border-dark-500">
-                  {modalTabs.map((tab) => (
-                    <Tab
-                      key={tab}
-                      className="-mb-px shrink-0 border-b-2 border-transparent px-3 py-3 text-sm text-gray-500 outline-hidden transition hover:text-primary-600 data-selected:border-primary-500 data-selected:font-medium data-selected:text-primary-600 dark:text-dark-300 dark:hover:text-primary-400 dark:data-selected:text-primary-400"
-                    >
-                      {tab}
-                    </Tab>
-                  ))}
-                </TabList>
-              </TabGroup>
-
-              <div className="space-y-5 pt-5">
-                <section className="space-y-3">
-                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">
-                    Proveedor
-                  </h4>
-                  <div className="grid gap-3 md:grid-cols-12">
-                    <Select
-                      classNames={{ root: "md:col-span-8" }}
-                      label={<RequiredLabel text="Suplidor / Proveedor" />}
-                      defaultValue={elemento?.proveedor ?? ""}
-                    >
-                      <option value="" disabled>
-                        Seleccione un suplidor
-                      </option>
-                      <option value="vallas-estilo">Vallas Estilo</option>
-                      <option value="media-group">Media Group SRL</option>
-                      <option value="vision-publicidad">Vision Publicidad</option>
-                    </Select>
-
-                    <Input
-                      classNames={{ root: "md:col-span-4" }}
-                      label="ID-Suplidor"
-                      value={elemento?.id ?? ""}
-                      placeholder="Se generará automáticamente"
-                      readOnly
-                      disabled
-                    />
-                  </div>
-                </section>
-
-                <section className="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-500">
-                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">
-                    Datos del Elemento
-                  </h4>
-                  <div className="grid gap-3 md:grid-cols-12">
-                    <Select
-                      classNames={{ root: "md:col-span-4" }}
-                      label={<RequiredLabel text="Tipo de Elemento" />}
-                      defaultValue={elemento?.tipo ?? ""}
-                    >
-                      <option value="" disabled>
-                        Seleccione un tipo
-                      </option>
-                      <option value="estatico">Estático</option>
-                      <option value="digital">Digital</option>
-                      <option value="movil">Móvil</option>
-                    </Select>
-
-                    <Select
-                      classNames={{ root: "md:col-span-4" }}
-                      label={<RequiredLabel text="Formato" />}
-                      defaultValue={elemento?.formato ?? ""}
-                    >
-                      <option value="" disabled>
-                        Seleccione un formato
-                      </option>
-                      <option value="valla">Valla</option>
-                      <option value="mupi">Mupi</option>
-                      <option value="pantalla">Pantalla</option>
-                    </Select>
-
-                    <Select
-                      classNames={{ root: "md:col-span-4" }}
-                      label={<RequiredLabel text="Tamaño" />}
-                      defaultValue={elemento?.tamaño ?? ""}
-                    >
-                      <option value="" disabled>
-                        Seleccione un tamaño
-                      </option>
-                      <option value="4x6">4 x 6</option>
-                      <option value="8x14">8 x 14</option>
-                      <option value="12x36">12 x 36</option>
-                    </Select>
-
-                    <Select
-                      classNames={{ root: "md:col-span-5" }}
-                      label="Orientación"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Seleccione una orientación
-                      </option>
-                      <option value="norte">Norte</option>
-                      <option value="sur">Sur</option>
-                      <option value="este">Este</option>
-                      <option value="oeste">Oeste</option>
-                    </Select>
-
-                    <div className="md:col-span-7">
-                      <label className="input-label">
-                        <span className="input-label">
-                          <RequiredLabel text="Estatus" />
-                        </span>
-                      </label>
-                      <div className="mt-3 flex flex-wrap items-center gap-5">
-                        <Radio name="status" label="Sí (Activo)" defaultChecked />
-                        <Radio name="status" label="No (Inactivo)" />
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-500">
-                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">
-                    Información Básica
-                  </h4>
-                  <div className="grid gap-3 md:grid-cols-12">
-                    <Input
-                      classNames={{ root: "md:col-span-8" }}
-                      label={<RequiredLabel text="Nombre / Referencia del Elemento" />}
-                      defaultValue={elemento?.elemento ?? ""}
-                      placeholder="Ej. ELM-0011"
-                    />
-
-                    <Input
-                      classNames={{ root: "md:col-span-4" }}
-                      label="ID-Seguimiento"
-                      placeholder="Ej. SEG-2025-001"
-                    />
-
-                    <Textarea
-                      classNames={{ root: "md:col-span-12" }}
-                      label={<RequiredLabel text="Dirección" />}
-                      defaultValue={elemento?.ubicacion ?? ""}
-                      rows={2}
-                      placeholder="Ingrese la dirección exacta del elemento"
-                    />
-                  </div>
-                </section>
-
-                <section className="space-y-3 border-t border-gray-200 pt-5 dark:border-dark-500">
-                  <h4 className="text-xl font-semibold text-gray-800 dark:text-dark-100">
-                    Ubicación
-                  </h4>
-                  <div className="grid gap-3 md:grid-cols-12">
-                    <Select
-                      classNames={{ root: "md:col-span-4" }}
-                      label={<RequiredLabel text="Provincia" />}
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Seleccione una provincia
-                      </option>
-                      <option value="santo-domingo">Santo Domingo</option>
-                      <option value="santiago">Santiago</option>
-                    </Select>
-
-                    <Select
-                      classNames={{ root: "md:col-span-4" }}
-                      label={<RequiredLabel text="Municipio" />}
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Seleccione un municipio
-                      </option>
-                      <option value="distrito-nacional">Distrito Nacional</option>
-                      <option value="santo-domingo-este">Santo Domingo Este</option>
-                    </Select>
-
-                    <Select
-                      classNames={{ root: "md:col-span-4" }}
-                      label={<RequiredLabel text="Sector / Barrio" />}
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Seleccione un sector
-                      </option>
-                      <option value="naco">Naco</option>
-                      <option value="piantini">Piantini</option>
-                    </Select>
-
-                    <Input
-                      classNames={{ root: "md:col-span-5" }}
-                      label="Circunscripción"
-                      placeholder="Ingrese la circunscripción"
-                    />
-
-                    <Input
-                      classNames={{ root: "md:col-span-3.5" }}
-                      label="Latitud"
-                      placeholder="Ej. 18.4861"
-                    />
-
-                    <Input
-                      classNames={{ root: "md:col-span-3.5" }}
-                      label="Longitud"
-                      placeholder="Ej. -69.9312"
-                    />
-                  </div>
-                </section>
-              </div>
-
-              <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-gray-200 pt-5 dark:border-dark-500">
-                <Button variant="outlined" className="min-w-[9rem]" onClick={onClose}>
-                  Cancelar
-                </Button>
-                <Button
-                  color="primary"
-                  className="min-w-[12rem]"
-                  onClick={() => {
-                    onSaved();
-                  }}
-                >
-                  {elemento ? "Guardar cambios" : "Guardar elemento"}
-                </Button>
-              </div>
-            </div>
-          </DialogPanel>
-        </TransitionChild>
-      </Dialog>
-    </Transition>
   );
 }

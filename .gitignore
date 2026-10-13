@@ -11,4 +11,6 @@ node_modules
 .env.production.local
 .env.test.local
 .env.local
+desarrollo/api/node_modules
+desarrollo/frontend/node_modules
 
